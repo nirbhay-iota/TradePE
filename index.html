@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePe — Digital Asset Exchange</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --neon: #00ffe0;
+      --neon2: #ff2d78;
+      --accent: #7b5cfa;
+      --bg: #050810;
+      --bg2: #0a0f1e;
+      --bg3: #0f1629;
+      --card: #111827;
+      --border: #1e2d4a;
+      --text: #e2e8f0;
+      --muted: #4a5568;
+      --green: #00d68f;
+      --red: #ff3d71;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .space-mono {
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Animated grid background */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(0, 255, 224, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 224, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+
+    .glow-neon {
+      text-shadow: 0 0 20px var(--neon), 0 0 40px rgba(0, 255, 224, 0.4);
+    }
+
+    .glow-pink {
+      text-shadow: 0 0 20px var(--neon2), 0 0 40px rgba(255, 45, 120, 0.4);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--neon), transparent);
+      opacity: 0.4;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--neon), var(--accent));
+      color: #000;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.05em;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 28px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 255, 224, 0.3);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--neon2), #ff6b35);
+      color: #fff;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 28px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 45, 120, 0.3);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--neon);
+      border: 1px solid var(--neon);
+      border-radius: 10px;
+      padding: 10px 24px;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(0, 255, 224, 0.1);
+      box-shadow: 0 0 15px rgba(0, 255, 224, 0.2);
+    }
+
+    .input-field {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 12px 16px;
+      width: 100%;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 0 3px rgba(0, 255, 224, 0.1);
+    }
+
+    .input-field::placeholder {
+      color: var(--muted);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: rgba(0, 255, 224, 0.08);
+      color: var(--neon);
+    }
+
+    .nav-item.active {
+      border-left: 2px solid var(--neon);
+    }
+
+    .badge-up {
+      background: rgba(0, 214, 143, 0.15);
+      color: var(--green);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 12px;
+    }
+
+    .badge-down {
+      background: rgba(255, 61, 113, 0.15);
+      color: var(--red);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 12px;
+    }
+
+    .crypto-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Page transitions */
+    .page {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Auth pages */
+    .auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-card::after {
+      content: '';
+      position: absolute;
+      bottom: -50%;
+      right: -50%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(0, 255, 224, 0.06), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg2);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 14px;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      max-width: 320px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Scanner overlay */
+    #qr-reader {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    #qr-reader video {
+      border-radius: 12px;
+    }
+
+    /* Loading dots */
+    .loading-dots span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: var(--neon);
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: bounce 1s infinite;
+    }
+
+    .loading-dots span:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .loading-dots span:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px;
+    }
+
+    #main-content {
+      margin-left: 240px;
+      min-height: 100vh;
+      padding: 28px;
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(0, 214, 143, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 0 6px rgba(0, 214, 143, 0);
+      }
+    }
+
+    .stat-number {
+      font-family: 'Space Mono', monospace;
+      font-size: 28px;
+      color: var(--neon);
+      font-weight: 700;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th {
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 14px;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(30, 45, 74, 0.5);
+    }
+
+    tr:hover td {
+      background: rgba(0, 255, 224, 0.02);
+    }
+
+    .ticker-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      background: rgba(123, 92, 250, 0.2);
+      color: #a78bfa;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    select.input-field option {
+      background: var(--bg3);
+    }
+
+    /* Chart container */
+    .chart-wrap {
+      position: relative;
+      height: 160px;
+    }
+
+    /* QR scanner */
+    #html5-qrcode-button-camera-permission,
+    #html5-qrcode-button-camera-stop,
+    #html5-qrcode-button-file-selection {
+      background: var(--neon) !important;
+      color: #000 !important;
+      border: none !important;
+      border-radius: 8px !important;
+      padding: 8px 16px !important;
+      font-family: 'Syne', sans-serif !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="grid-bg"></div>
+
+  <!-- Toast notification -->
+  <div id="toast"></div>
+
+  <!-- ==================== AUTH PAGES ==================== -->
+  <div id="page-auth" class="page active" style="position:relative;z-index:1;">
+    <!-- Login Page -->
+    <div id="view-login" class="auth-container">
+      <div class="auth-card">
+        <div style="margin-bottom: 32px;">
+          <div style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px;">
+            <span style="color: var(--neon);">Trade</span><span style="color: var(--text);">Pe</span>
+          </div>
+          <div style="color: var(--muted); font-size: 13px;" class="mono">Digital Asset Exchange</div>
+        </div>
+
+        <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 24px;">Sign In</h2>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <label
+              style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Email</label>
+            <input class="input-field" type="email" id="login-email" placeholder="you@example.com">
+          </div>
+          <div>
+            <label
+              style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Password</label>
+            <input class="input-field" type="password" id="login-password" placeholder="••••••••">
+          </div>
+          <button class="btn-primary" style="width:100%; margin-top: 8px;" onclick="handleLogin()">
+            Sign In →
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted);">
+          Don't have an account?
+          <span style="color: var(--neon); cursor: pointer; font-weight: 600;" onclick="showView('view-register')">
+            Register</span>
+        </div>
+
+        <!-- Demo hint -->
+        <div
+          style="margin-top: 20px; padding: 12px; background: rgba(0,255,224,0.05); border: 1px solid rgba(0,255,224,0.15); border-radius: 10px; font-size: 12px; color: var(--muted);"
+          class="mono">
+          🧪 Demo: register a new account or use any existing credentials
+        </div>
+      </div>
+    </div>
+
+    <!-- Register Page -->
+    <div id="view-register" class="auth-container" style="display:none;">
+      <div class="auth-card">
+        <div style="margin-bottom: 32px;">
+          <div style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px;">
+            <span style="color: var(--neon);">Trade</span><span style="color: var(--text);">Pe</span>
+          </div>
+          <div style="color: var(--muted); font-size: 13px;" class="mono">Create your account</div>
+        </div>
+
+        <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 24px;">Register</h2>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label
+              style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Full
+              Name</label>
+            <input class="input-field" type="text" id="reg-name" placeholder="Satoshi Nakamoto">
+          </div>
+          <div>
+            <label
+              style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Email</label>
+            <input class="input-field" type="email" id="reg-email" placeholder="you@example.com">
+          </div>
+          <div>
+            <label
+              style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Password</label>
+            <input class="input-field" type="password" id="reg-password" placeholder="Min 6 characters">
+          </div>
+          <div>
+            <label
+              style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Initial
+              Deposit (₹)</label>
+            <input class="input-field" type="number" id="reg-deposit" placeholder="10000" value="10000" min="1000">
+          </div>
+          <button class="btn-primary" style="width:100%; margin-top: 8px;" onclick="handleRegister()">
+            Create Account →
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted);">
+          Already registered?
+          <span style="color: var(--neon); cursor: pointer; font-weight: 600;" onclick="showView('view-login')"> Sign
+            In</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="page-app" class="page" style="position:relative;z-index:1;">
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div style="margin-bottom: 32px;">
+        <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">
+          <span style="color: var(--neon);">Trade</span><span style="color: var(--text);">Pe</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+          <span class="pulse-dot"></span>
+          <span style="font-size: 11px; color: var(--muted);" class="mono">Live Market</span>
+        </div>
+      </div>
+
+      <!-- User info -->
+      <div
+        style="background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 24px;">
+        <div style="font-size: 12px; color: var(--muted); margin-bottom: 2px;">Logged in as</div>
+        <div id="sidebar-username"
+          style="font-weight: 700; font-size: 14px; color: var(--neon); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        </div>
+      </div>
+
+      <nav style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+        <div class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+          Dashboard
+        </div>
+        <div class="nav-item" id="nav-markets" onclick="switchTab('markets')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
+          Markets
+        </div>
+        <div class="nav-item" id="nav-pay" onclick="switchTab('pay')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
+          </svg>
+          Pay via UPI
+        </div>
+        <div class="nav-item" id="nav-wallet" onclick="switchTab('wallet')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+          </svg>
+          My Wallet
+        </div>
+        <div class="nav-item" id="nav-history" onclick="switchTab('history')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          Payment History
+        </div>
+      </nav>
+
+      <button class="btn-ghost" style="width:100%; margin-top: auto;" onclick="handleLogout()">
+        ⎋ Sign Out
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+
+      <!-- ===== DASHBOARD TAB ===== -->
+      <div id="tab-dashboard" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+          <div>
+            <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">Overview</h1>
+            <div style="color: var(--muted); font-size: 13px;" id="dashboard-greeting"></div>
+          </div>
+          <div id="dash-date" class="mono" style="font-size: 12px; color: var(--muted);"></div>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+          <div class="card" style="padding: 22px;">
+            <div
+              style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px;">
+              Wallet Balance</div>
+            <div class="stat-number" id="dash-balance">₹0</div>
+            <div style="font-size: 12px; color: var(--green); margin-top: 6px;">💰 INR Balance</div>
+          </div>
+          <div class="card" style="padding: 22px;">
+            <div
+              style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px;">
+              Total Paid</div>
+            <div class="stat-number" style="color: var(--neon2);" id="dash-total-paid">₹0</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 6px;">📤 Via UPI</div>
+          </div>
+          <div class="card" style="padding: 22px;">
+            <div
+              style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px;">
+              Transactions</div>
+            <div class="stat-number" style="color: var(--accent);" id="dash-tx-count">0</div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 6px;">📊 All time</div>
+          </div>
+        </div>
+
+        <!-- Mini charts row -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px;"
+          id="mini-charts-container">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Recent transactions -->
+        <div class="card" style="padding: 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 700;">Recent Transactions</h3>
+            <span style="font-size: 12px; color: var(--neon); cursor: pointer;" onclick="switchTab('history')">View all
+              →</span>
+          </div>
+          <div id="dash-recent-tx">
+            <div style="text-align: center; padding: 28px; color: var(--muted); font-size: 13px;">No transactions yet
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MARKETS TAB ===== -->
+      <div id="tab-markets" class="tab-content" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+          <div>
+            <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">Markets</h1>
+            <div style="color: var(--muted); font-size: 13px;" class="mono">Top 5 Cryptocurrencies</div>
+          </div>
+          <div
+            style="display: flex; align-items: center; gap: 8px; background: rgba(0,255,224,0.05); border: 1px solid rgba(0,255,224,0.2); border-radius: 8px; padding: 8px 14px;">
+            <span class="pulse-dot"></span>
+            <span style="font-size: 12px; color: var(--neon);" class="mono">LIVE</span>
+          </div>
+        </div>
+
+        <!-- API Status Banner -->
+        <div
+          style="background: rgba(123,92,250,0.1); border: 1px solid rgba(123,92,250,0.3); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 16px;">🔌</span>
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #a78bfa;">API Integration Point</div>
+            <div style="font-size: 11px; color: var(--muted);" class="mono">Replace <code
+                style="color:#a78bfa;">fetchCryptoPrices()</code> in JS with your API call (CoinGecko, Binance, etc.) —
+              prices currently use simulated data</div>
+          </div>
+        </div>
+
+        <div id="markets-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- ===== PAY VIA UPI TAB ===== -->
+      <div id="tab-pay" class="tab-content" style="display:none;">
+        <div style="margin-bottom: 28px;">
+          <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">Pay via UPI</h1>
+          <div style="color: var(--muted); font-size: 13px;" class="mono">Scan a UPI QR code and pay using your crypto
+            balance</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Scanner Panel -->
+          <div class="card" style="padding: 24px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">
+              📷 Scan UPI QR Code
+            </h3>
+
+            <div id="qr-reader"
+              style="width: 100%; background: var(--bg3); border-radius: 12px; min-height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; border: 2px dashed var(--border);">
+              <div style="text-align: center; color: var(--muted); font-size: 13px;">
+                <div style="font-size: 36px; margin-bottom: 8px;">📷</div>
+                Scanner will appear here
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+              <button class="btn-primary" style="flex: 1;" id="start-scan-btn" onclick="startQRScan()">
+                Start Scanner
+              </button>
+              <button class="btn-ghost" id="stop-scan-btn" onclick="stopQRScan()" style="display:none; flex: 1;">
+                Stop
+              </button>
+            </div>
+
+            <div
+              style="background: var(--bg3); border-radius: 10px; padding: 14px; font-size: 12px; color: var(--muted);"
+              class="mono">
+              <div style="color: var(--neon); margin-bottom: 4px; font-weight: 700;">Or enter UPI ID manually:</div>
+              <input class="input-field" type="text" id="manual-upi" placeholder="example@upi" style="margin-top: 6px;">
+              <button onclick="useManualUPI()"
+                style="margin-top: 8px; background: rgba(0,255,224,0.1); color: var(--neon); border: 1px solid rgba(0,255,224,0.3); border-radius: 8px; padding: 8px 16px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 12px; width: 100%;">
+                Use this UPI ID
+              </button>
+            </div>
+          </div>
+
+          <!-- Payment Panel -->
+          <div class="card" style="padding: 24px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">💸 Payment Details</h3>
+
+            <div style="background: var(--bg3); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Recipient UPI ID</div>
+              <div id="pay-upi-display" style="font-family: 'Space Mono'; font-size: 14px; color: var(--neon);">— Not
+                scanned yet —</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <label
+                  style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Pay
+                  with Crypto</label>
+                <select class="input-field" id="pay-crypto-select" onchange="updateCryptoAmount()">
+                  <option value="BTC">Bitcoin (BTC)</option>
+                  <option value="ETH">Ethereum (ETH)</option>
+                  <option value="BNB">BNB</option>
+                  <option value="SOL">Solana (SOL)</option>
+                  <option value="XRP">XRP</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Amount
+                  (₹ INR)</label>
+                <input class="input-field" type="number" id="pay-amount-inr" placeholder="500"
+                  oninput="updateCryptoAmount()">
+              </div>
+            </div>
+
+            <!-- Conversion display -->
+            <div
+              style="background: linear-gradient(135deg, rgba(0,255,224,0.05), rgba(123,92,250,0.05)); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+              <div
+                style="font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">
+                Conversion Preview</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="mono" style="font-size: 13px; color: var(--muted);">INR Amount</span>
+                <span class="mono" style="font-size: 14px; color: var(--text);" id="conv-inr">₹0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="mono" style="font-size: 13px; color: var(--muted);">Crypto to Deduct</span>
+                <span class="mono" style="font-size: 14px; color: var(--neon);" id="conv-crypto">0 BTC</span>
+              </div>
+              <div style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="mono" style="font-size: 13px; color: var(--muted);">Your Balance</span>
+                <span class="mono" style="font-size: 14px;" id="conv-balance">₹0</span>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label
+                style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Payment
+                Note (optional)</label>
+              <input class="input-field" type="text" id="pay-note" placeholder="Payment for...">
+            </div>
+
+            <button class="btn-primary" style="width:100%;" id="pay-btn" onclick="processPayment()">
+              🔐 Confirm Payment
+            </button>
+
+            <!-- Backend note -->
+            <div
+              style="margin-top: 14px; background: rgba(255,45,120,0.05); border: 1px solid rgba(255,45,120,0.2); border-radius: 10px; padding: 12px; font-size: 11px; color: var(--muted);"
+              class="mono">
+              ⚙️ <span style="color: #ff8fab;">Backend Hook:</span> On payment confirm, call your bank API to transfer
+              the INR equivalent. The <code style="color: #ff8fab;">processPayment()</code> function emits a payment
+              event ready for your backend integration.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== WALLET TAB ===== -->
+      <div id="tab-wallet" class="tab-content" style="display:none;">
+        <div style="margin-bottom: 28px;">
+          <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">My Wallet</h1>
+          <div style="color: var(--muted); font-size: 13px;" class="mono">Your asset holdings</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px;">
+          <!-- Balance card -->
+          <div>
+            <div class="card" style="padding: 28px; margin-bottom: 16px; text-align: center;">
+              <div
+                style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px;">
+                Total Balance</div>
+              <div style="font-size: 42px; font-weight: 800; color: var(--neon); font-family: 'Space Mono';"
+                id="wallet-balance">₹0</div>
+              <div style="color: var(--muted); font-size: 12px; margin-top: 8px;">Indian Rupees (INR)</div>
+              <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-primary" style="font-size: 12px; padding: 8px 20px;" onclick="showAddFunds()">+ Add
+                  Funds</button>
+                <button class="btn-ghost" style="font-size: 12px; padding: 8px 20px;" onclick="switchTab('pay')">Pay
+                  Now</button>
+              </div>
+            </div>
+
+            <!-- Add funds modal inline -->
+            <div id="add-funds-panel" class="card" style="padding: 22px; display: none;">
+              <h4 style="font-weight: 700; margin-bottom: 14px;">💳 Add Funds</h4>
+              <input class="input-field" type="number" id="add-funds-amount" placeholder="Amount in ₹"
+                style="margin-bottom: 10px;">
+              <div style="font-size: 11px; color: var(--muted); margin-bottom: 10px;" class="mono">
+                * Simulated — connects to your fintech bank backend
+              </div>
+              <button class="btn-primary" style="width:100%;" onclick="addFunds()">Add Funds</button>
+            </div>
+          </div>
+
+          <!-- Holdings -->
+          <div class="card" style="padding: 24px;">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Holdings Overview</h3>
+            <div id="holdings-table">
+              <!-- Populated by JS -->
+            </div>
+            <div
+              style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted);"
+              class="mono">
+              💡 Holdings shown in INR equivalent at current market rate
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== HISTORY TAB ===== -->
+      <div id="tab-history" class="tab-content" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+          <div>
+            <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">Payment History</h1>
+            <div style="color: var(--muted); font-size: 13px;" class="mono">All your UPI crypto payments</div>
+          </div>
+          <button onclick="clearHistory()"
+            style="background: rgba(255,61,113,0.1); color: var(--red); border: 1px solid rgba(255,61,113,0.3); border-radius: 8px; padding: 8px 16px; cursor: pointer; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;">
+            🗑 Clear History
+          </button>
+        </div>
+
+        <!-- Summary cards -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;"
+          id="history-stats">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Payments table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div id="payments-table-container">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- end main-content -->
+  </div> <!-- end page-app -->
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    // ============================================================
+    // DATABASE (localStorage)
+    // ============================================================
+    const DB = {
+      // Users
+      getUsers() { return JSON.parse(localStorage.getItem('cryptonex_users') || '[]'); },
+      saveUsers(users) { localStorage.setItem('cryptonex_users', JSON.stringify(users)); },
+      getUserByEmail(email) { return this.getUsers().find(u => u.email === email); },
+      createUser(name, email, password, deposit) {
+        const users = this.getUsers();
+        if (users.find(u => u.email === email)) return null;
+        const user = {
+          id: 'usr_' + Date.now(),
+          name, email,
+          password, // In prod: hash this!
+          balance: parseFloat(deposit) || 10000,
+          createdAt: new Date().toISOString(),
+          cryptoHoldings: {
+            BTC: 0.001,
+            ETH: 0.05,
+            BNB: 0.2,
+            SOL: 1.0,
+            XRP: 50
+          }
+        };
+        users.push(user);
+        this.saveUsers(users);
+        return user;
+      },
+      updateUser(updatedUser) {
+        const users = this.getUsers().map(u => u.id === updatedUser.id ? updatedUser : u);
+        this.saveUsers(users);
+      },
+
+      // Payments
+      getPayments(userId) {
+        const all = JSON.parse(localStorage.getItem('cryptonex_payments') || '[]');
+        return all.filter(p => p.userId === userId);
+      },
+      getAllPayments() { return JSON.parse(localStorage.getItem('cryptonex_payments') || '[]'); },
+      savePayment(payment) {
+        const payments = this.getAllPayments();
+        payments.unshift(payment);
+        localStorage.setItem('cryptonex_payments', JSON.stringify(payments));
+      },
+      clearUserPayments(userId) {
+        const payments = this.getAllPayments().filter(p => p.userId !== userId);
+        localStorage.setItem('cryptonex_payments', JSON.stringify(payments));
+      }
+    };
+
+    // ============================================================
+    // SESSION
+    // ============================================================
+    var currentUser = JSON.parse(sessionStorage.getItem('cryptonex_session') || 'null');
+
+    function setSession(user) {
+      currentUser = user;
+      sessionStorage.setItem('cryptonex_session', JSON.stringify(user));
+    }
+    function clearSession() {
+      currentUser = null;
+      sessionStorage.removeItem('cryptonex_session');
+    }
+
+    // ============================================================
+    // CRYPTO PRICE ENGINE
+    // ============================================================
+
+    // ====================================================
+    // 🔌 API INTEGRATION POINT
+    // Replace the simulated prices below with real API calls.
+    // Example with CoinGecko (free tier):
+    //   const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=inr,usd&include_24hr_change=true');
+    //   const data = await res.json();
+    //   Then map data to the cryptoData format below.
+    // ====================================================
+    const CRYPTO_CONFIG = {
+      USDT: { name: 'Tether USD',  symbol: 'USDT', color: '#26a17b', bg: '#0d1a14', icon: '₮' },
+      BTC: { name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', bg: '#1a1200', icon: '₿' },
+      ETH: { name: 'Ethereum', symbol: 'ETH', color: '#627eea', bg: '#0d0f1f', icon: 'Ξ' },
+      BNB: { name: 'BNB', symbol: 'BNB', color: '#f3ba2f', bg: '#1a1600', icon: 'B' },
+      SOL: { name: 'Solana', symbol: 'SOL', color: '#9945ff', bg: '#150920', icon: '◎' },
+      XRP: { name: 'XRP', symbol: 'XRP', color: '#00aae4', bg: '#001520', icon: 'X' },
+    };
+
+    let cryptoPrices = {
+      USDT: { priceINR: 84,      change24h: 0.1  },
+      BTC: { priceINR: 6850000, change24h: 2.3 },
+      ETH: { priceINR: 310000, change24h: -1.1 },
+      BNB: { priceINR: 52000, change24h: 0.8 },
+      SOL: { priceINR: 15800, change24h: 4.2 },
+      XRP: { priceINR: 220, change24h: -0.5 },
+    };
+
+    // Simulate live price ticks
+    function simulatePriceTick() {
+      Object.keys(cryptoPrices).forEach(sym => {
+        const volatility = { BTC: 0.003, ETH: 0.004, BNB: 0.003, SOL: 0.006, XRP: 0.005 }[sym] || 0.004;
+        const change = (Math.random() - 0.5) * 2 * volatility;
+        cryptoPrices[sym].priceINR *= (1 + change);
+        cryptoPrices[sym].change24h += (Math.random() - 0.5) * 0.2;
+        cryptoPrices[sym].change24h = Math.max(-15, Math.min(15, cryptoPrices[sym].change24h));
+      });
+    }
+
+    // Chart history data per crypto
+    const chartHistory = {};
+    Object.keys(CRYPTO_CONFIG).forEach(sym => {
+      const basePrice = cryptoPrices[sym].priceINR;
+      chartHistory[sym] = Array.from({ length: 30 }, (_, i) => {
+        return basePrice * (1 + (Math.random() - 0.5) * 0.15);
+      });
+    });
+
+    let chartInstances = {};
+
+    // ============================================================
+    // AUTH HANDLERS
+    // ============================================================
+    function showView(id) {
+      document.getElementById('view-login').style.display = 'none';
+      document.getElementById('view-register').style.display = 'none';
+      document.getElementById(id).style.display = 'flex';
+    }
+
+    function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) { showToast('❌ Please fill in all fields', 'error'); return; }
+      const user = DB.getUserByEmail(email);
+      if (!user || user.password !== password) {
+        showToast('❌ Invalid email or password', 'error'); return;
+      }
+      setSession(user);
+      showApp();
+      showToast(`👋 Welcome back, ${user.name.split(' ')[0]}!`, 'success');
+    }
+
+    function handleRegister() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const deposit = document.getElementById('reg-deposit').value;
+      if (!name || !email || !password) { showToast('❌ Please fill all fields', 'error'); return; }
+      if (password.length < 6) { showToast('❌ Password must be at least 6 chars', 'error'); return; }
+      const user = DB.createUser(name, email, password, deposit);
+      if (!user) { showToast('❌ Email already registered', 'error'); return; }
+      setSession(user);
+      showApp();
+      showToast(`🎉 Account created! Welcome, ${name.split(' ')[0]}!`, 'success');
+    }
+
+    function handleLogout() {
+      stopQRScan();
+      clearSession();
+      showAuth();
+      showToast('👋 Signed out successfully', 'info');
+    }
+
+    // ============================================================
+    // PAGE MANAGEMENT
+    // ============================================================
+    function showAuth() {
+      document.getElementById('page-auth').classList.add('active');
+      document.getElementById('page-app').classList.remove('active');
+      document.getElementById('page-auth').style.display = 'block';
+      document.getElementById('page-app').style.display = 'none';
+    }
+
+    function showApp() {
+      if (!currentUser) {        // ← add this guard
+        showAuth();
+        return;
+      }
+      document.getElementById('page-auth').classList.remove('active');
+      document.getElementById('page-app').classList.add('active');
+      document.getElementById('page-auth').style.display = 'none';
+      document.getElementById('page-app').style.display = 'block';
+      initDashboard();
+      switchTab('dashboard');
+    }
+
+    function switchTab(tab) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      // Show selected
+      document.getElementById('tab-' + tab).style.display = 'block';
+      document.getElementById('nav-' + tab)?.classList.add('active');
+
+      // Tab-specific init
+      if (tab === 'dashboard') renderDashboard();
+      if (tab === 'markets') renderMarkets();
+      if (tab === 'wallet') renderWallet();
+      if (tab === 'history') renderHistory();
+      if (tab === 'pay') renderPayTab();
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    function initDashboard() {
+      if (!currentUser) return;
+      // Refresh user from DB
+      currentUser = DB.getUserByEmail(currentUser.email);
+      setSession(currentUser);
+
+      document.getElementById('sidebar-username').textContent = currentUser.name;
+      document.getElementById('dashboard-greeting').textContent = `Good ${getTimeGreeting()}, ${currentUser.name.split(' ')[0]}`;
+      document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+      // Start price simulation
+      setInterval(() => {
+        simulatePriceTick();
+        updateMiniCharts();
+        updateConversionPreview();
+      }, 3000);
+    }
+
+    function getTimeGreeting() {
+      const h = new Date().getHours();
+      if (h < 12) return 'Morning';
+      if (h < 17) return 'Afternoon';
+      return 'Evening';
+    }
+
+    // ============================================================
+    // DASHBOARD RENDER
+    // ============================================================
+    function renderDashboard() {
+      if (!currentUser) return;
+      currentUser = DB.getUserByEmail(currentUser.email);
+
+      const payments = DB.getPayments(currentUser.id);
+      const totalPaid = payments.reduce((s, p) => s + p.amountINR, 0);
+
+      document.getElementById('dash-balance').textContent = formatINR(currentUser.balance);
+      document.getElementById('dash-total-paid').textContent = formatINR(totalPaid);
+      document.getElementById('dash-tx-count').textContent = payments.length;
+
+      renderMiniCharts();
+      renderRecentTx(payments.slice(0, 5));
+    }
+
+    function renderMiniCharts() {
+      const container = document.getElementById('mini-charts-container');
+      container.innerHTML = '';
+      Object.keys(CRYPTO_CONFIG).forEach(sym => {
+        const cfg = CRYPTO_CONFIG[sym];
+        const price = cryptoPrices[sym];
+        const isUp = price.change24h >= 0;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.cssText = 'padding: 14px; cursor: pointer;';
+        card.onclick = () => switchTab('markets');
+        card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+        <div>
+          <div style="font-size: 11px; color: var(--muted); font-family: 'Space Mono';">${sym}</div>
+          <div style="font-size: 14px; font-weight: 700; color: ${cfg.color}; font-family: 'Space Mono';">₹${formatCompact(price.priceINR)}</div>
+        </div>
+        <span class="${isUp ? 'badge-up' : 'badge-down'}">${isUp ? '+' : ''}${price.change24h.toFixed(1)}%</span>
+      </div>
+      <canvas id="mini-chart-${sym}" height="50"></canvas>
+    `;
+        container.appendChild(card);
+        drawMiniChart(sym, cfg.color);
+      });
+    }
+
+    function drawMiniChart(sym, color) {
+      const canvas = document.getElementById('mini-chart-' + sym);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (chartInstances['mini_' + sym]) chartInstances['mini_' + sym].destroy();
+      chartInstances['mini_' + sym] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartHistory[sym].map((_, i) => i),
+          datasets: [{
+            data: chartHistory[sym], borderColor: color, borderWidth: 2, fill: true,
+            backgroundColor: (ctx) => {
+              const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 50);
+              g.addColorStop(0, color + '40'); g.addColorStop(1, color + '00'); return g;
+            }, tension: 0.4, pointRadius: 0
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } }, animation: false }
+      });
+    }
+
+    function updateMiniCharts() {
+      Object.keys(CRYPTO_CONFIG).forEach(sym => {
+        chartHistory[sym].push(cryptoPrices[sym].priceINR);
+        chartHistory[sym].shift();
+        if (chartInstances['mini_' + sym]) {
+          chartInstances['mini_' + sym].data.datasets[0].data = chartHistory[sym];
+          chartInstances['mini_' + sym].update('none');
+        }
+      });
+      // Also update any open price displays
+      document.querySelectorAll('[data-price-sym]').forEach(el => {
+        const sym = el.dataset.priceSym;
+        if (cryptoPrices[sym]) el.textContent = '₹' + formatCompact(cryptoPrices[sym].priceINR);
+      });
+    }
+
+    function renderRecentTx(payments) {
+      const container = document.getElementById('dash-recent-tx');
+      if (!payments.length) {
+        container.innerHTML = '<div style="text-align: center; padding: 28px; color: var(--muted); font-size: 13px;">No transactions yet</div>';
+        return;
+      }
+      container.innerHTML = payments.map(p => `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(30,45,74,0.5);">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; background: rgba(255,45,120,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px;">📤</div>
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">${p.upiId}</div>
+          <div style="font-size: 11px; color: var(--muted);" class="mono">${p.note || 'UPI Payment'} · ${formatDate(p.createdAt)}</div>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 14px; font-weight: 700; color: var(--red); font-family: 'Space Mono';">-${formatINR(p.amountINR)}</div>
+        <div style="font-size: 11px; color: var(--muted);">${p.cryptoAmount.toFixed(6)} ${p.cryptoSymbol}</div>
+      </div>
+    </div>
+  `).join('');
+    }
+
+    // ============================================================
+    // MARKETS RENDER
+    // ============================================================
+    function renderMarkets() {
+      const container = document.getElementById('markets-grid');
+      container.innerHTML = '';
+      Object.keys(CRYPTO_CONFIG).forEach(sym => {
+        const cfg = CRYPTO_CONFIG[sym];
+        const price = cryptoPrices[sym];
+        const isUp = price.change24h >= 0;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.cssText = 'padding: 22px;';
+        card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="crypto-icon" style="background: ${cfg.bg}; color: ${cfg.color}; border: 1px solid ${cfg.color}40; font-size: 18px;">${cfg.icon}</div>
+          <div>
+            <div style="font-weight: 700; font-size: 16px;">${cfg.name}</div>
+            <div class="ticker-tag">${sym}</div>
+          </div>
+        </div>
+        <span class="${isUp ? 'badge-up' : 'badge-down'}" style="font-size: 14px; padding: 4px 12px;">${isUp ? '▲ +' : '▼ '}${Math.abs(price.change24h).toFixed(2)}%</span>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 28px; font-weight: 700; color: ${cfg.color}; font-family: 'Space Mono';" data-price-sym="${sym}">₹${formatCompact(price.priceINR)}</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">≈ $${(price.priceINR / 84).toFixed(2)} USD</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-${sym}"></canvas>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;">
+        <div style="background: var(--bg3); border-radius: 8px; padding: 10px;">
+          <div style="font-size: 10px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.1em;">Your Holdings</div>
+          <div style="font-size: 13px; font-family: 'Space Mono';">${currentUser?.cryptoHoldings?.[sym]?.toFixed(4) || '0'} ${sym}</div>
+        </div>
+        <div style="background: var(--bg3); border-radius: 8px; padding: 10px;">
+          <div style="font-size: 10px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.1em;">INR Value</div>
+          <div style="font-size: 13px; font-family: 'Space Mono'; color: var(--green);">${formatINR((currentUser?.cryptoHoldings?.[sym] || 0) * price.priceINR)}</div>
+        </div>
+      </div>
+    `;
+        container.appendChild(card);
+        drawFullChart(sym, cfg.color);
+      });
+    }
+
+    function drawFullChart(sym, color) {
+      const canvas = document.getElementById('chart-' + sym);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (chartInstances['full_' + sym]) chartInstances['full_' + sym].destroy();
+      chartInstances['full_' + sym] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartHistory[sym].map((_, i) => i),
+          datasets: [{
+            data: chartHistory[sym],
+            borderColor: color, borderWidth: 2, fill: true,
+            backgroundColor: (ctx2) => {
+              const g = ctx2.chart.ctx.createLinearGradient(0, 0, 0, 160);
+              g.addColorStop(0, color + '50'); g.addColorStop(1, color + '00'); return g;
+            },
+            tension: 0.4, pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }, tooltip: {
+              callbacks: { label: (ctx) => ' ₹' + Math.round(ctx.raw).toLocaleString('en-IN') }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              display: true,
+              // ADD THESE TWO LINES:
+              min: (ctx) => Math.min(...ctx.chart.data.datasets[0].data) * 0.998,
+              max: (ctx) => Math.max(...ctx.chart.data.datasets[0].data) * 1.002,
+              grid: { color: 'rgba(30,45,74,0.4)', drawBorder: false },
+              ticks: {
+                color: 'rgba(74,85,104,0.8)', font: { family: 'JetBrains Mono', size: 10 },
+                callback: v => '₹' + formatCompact(v)
+              }
+            }
+          },
+          animation: false
+        }
+      });
+    }
+
+    // ============================================================
+    // WALLET RENDER
+    // ============================================================
+    function renderWallet() {
+      currentUser = DB.getUserByEmail(currentUser.email);
+      document.getElementById('wallet-balance').textContent = formatINR(currentUser.balance);
+
+      const holdings = currentUser.cryptoHoldings;
+      let totalCryptoINR = 0;
+      const rows = Object.keys(holdings).map(sym => {
+        const price = cryptoPrices[sym].priceINR;
+        const inrVal = holdings[sym] * price;
+        totalCryptoINR += inrVal;
+        const cfg = CRYPTO_CONFIG[sym];
+        const isUp = cryptoPrices[sym].change24h >= 0;
+        return `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid rgba(30,45,74,0.5);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="crypto-icon" style="background: ${cfg.bg}; color: ${cfg.color}; border: 1px solid ${cfg.color}40; width: 36px; height: 36px; font-size: 14px;">${cfg.icon}</div>
+          <div>
+            <div style="font-weight: 700; font-size: 14px;">${cfg.name}</div>
+            <div style="font-size: 12px; color: var(--muted);" class="mono">${holdings[sym].toFixed(6)} ${sym}</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 14px; font-weight: 700; font-family: 'Space Mono'; color: var(--green);">${formatINR(inrVal)}</div>
+          <span class="${isUp ? 'badge-up' : 'badge-down'}">${isUp ? '+' : ''}${cryptoPrices[sym].change24h.toFixed(1)}%</span>
+        </div>
+      </div>
+    `;
+      });
+
+      document.getElementById('holdings-table').innerHTML = `
+    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+      <span style="font-size: 12px; color: var(--muted);">Total Crypto Value</span>
+      <span style="font-weight: 700; color: var(--green); font-family: 'Space Mono';">${formatINR(totalCryptoINR)}</span>
+    </div>
+    ${rows.join('')}
+  `;
+    }
+
+    function showAddFunds() {
+      const panel = document.getElementById('add-funds-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addFunds() {
+      const amount = parseFloat(document.getElementById('add-funds-amount').value);
+      if (!amount || amount < 100) { showToast('❌ Minimum add ₹100', 'error'); return; }
+      currentUser.balance += amount;
+      DB.updateUser(currentUser);
+      setSession(currentUser);
+      document.getElementById('wallet-balance').textContent = formatINR(currentUser.balance);
+      document.getElementById('add-funds-panel').style.display = 'none';
+      document.getElementById('add-funds-amount').value = '';
+      showToast(`✅ ₹${amount.toLocaleString('en-IN')} added to wallet!`, 'success');
+      renderDashboard();
+    }
+
+    // ============================================================
+    // HISTORY RENDER
+    // ============================================================
+    function renderHistory() {
+      const payments = DB.getPayments(currentUser.id);
+      const totalPaid = payments.reduce((s, p) => s + p.amountINR, 0);
+      const avgTx = payments.length ? totalPaid / payments.length : 0;
+
+      // Stats
+      document.getElementById('history-stats').innerHTML = `
+    <div class="card" style="padding: 18px;">
+      <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Total Payments</div>
+      <div style="font-size: 24px; font-weight: 700; color: var(--neon); font-family: 'Space Mono';">${payments.length}</div>
+    </div>
+    <div class="card" style="padding: 18px;">
+      <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Total Spent</div>
+      <div style="font-size: 24px; font-weight: 700; color: var(--red); font-family: 'Space Mono';">${formatINR(totalPaid)}</div>
+    </div>
+    <div class="card" style="padding: 18px;">
+      <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Avg Transaction</div>
+      <div style="font-size: 24px; font-weight: 700; color: var(--accent); font-family: 'Space Mono';">${formatINR(avgTx)}</div>
+    </div>
+  `;
+
+      const container = document.getElementById('payments-table-container');
+      if (!payments.length) {
+        container.innerHTML = '<div style="text-align: center; padding: 60px; color: var(--muted); font-size: 14px;">📭 No payments made yet. Try the Pay via UPI section!</div>';
+        return;
+      }
+
+      container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>UPI ID</th>
+          <th>Note</th>
+          <th>Crypto</th>
+          <th>INR Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${payments.map(p => `
+          <tr>
+            <td class="mono" style="font-size: 12px; color: var(--muted);">${formatDate(p.createdAt)}</td>
+            <td style="font-weight: 600; color: var(--neon);">${p.upiId}</td>
+            <td style="color: var(--muted); font-size: 13px;">${p.note || '—'}</td>
+            <td class="mono" style="font-size: 13px;">${p.cryptoAmount.toFixed(6)} <span class="ticker-tag">${p.cryptoSymbol}</span></td>
+            <td style="font-weight: 700; font-family: 'Space Mono'; color: var(--red);">-${formatINR(p.amountINR)}</td>
+            <td><span style="background: rgba(0,214,143,0.15); color: var(--green); border-radius: 6px; padding: 3px 10px; font-size: 12px;">✓ Success</span></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+    }
+
+    function clearHistory() {
+      if (!confirm('Clear all payment history? This cannot be undone.')) return;
+      DB.clearUserPayments(currentUser.id);
+      renderHistory();
+      showToast('🗑 History cleared', 'info');
+    }
+
+    // ============================================================
+    // QR SCANNER
+    // ============================================================
+    let html5QrCode = null;
+    let scannedUPI = '';
+
+    function startQRScan() {
+      document.getElementById('qr-reader').innerHTML = '';
+      html5QrCode = new Html5Qrcode('qr-reader');
+      const config = { fps: 10, qrbox: { width: 200, height: 200 } };
+
+      html5QrCode.start(
+        { facingMode: 'environment' },
+        config,
+        (decodedText) => {
+          // QR decoded
+          stopQRScan();
+          parseUPIQR(decodedText);
+        },
+        (err) => { /* ignore scan errors */ }
+      ).then(() => {
+        document.getElementById('start-scan-btn').style.display = 'none';
+        document.getElementById('stop-scan-btn').style.display = 'block';
+      }).catch(err => {
+        showToast('⚠️ Camera not available. Use manual entry.', 'error');
+        document.getElementById('qr-reader').innerHTML = `<div style="text-align: center; padding: 40px; color: var(--muted); font-size: 13px;"><div style="font-size: 36px; margin-bottom: 8px;">📷</div>Camera unavailable<br><small>Use manual UPI entry below</small></div>`;
+      });
+    }
+
+    function stopQRScan() {
+      if (html5QrCode) {
+        html5QrCode.stop().catch(() => { });
+        html5QrCode = null;
+      }
+      document.getElementById('start-scan-btn').style.display = 'block';
+      document.getElementById('stop-scan-btn').style.display = 'none';
+    }
+
+    function parseUPIQR(text) {
+      // UPI QR format: upi://pay?pa=upiid@bank&pn=Name&am=amount
+      let upiId = text;
+      let amount = '';
+      try {
+        if (text.startsWith('upi://') || text.includes('pa=')) {
+          const url = new URL(text.replace('upi://', 'https://'));
+          upiId = url.searchParams.get('pa') || text;
+          amount = url.searchParams.get('am') || '';
+        }
+      } catch (e) { /* use raw text */ }
+
+      scannedUPI = upiId;
+      document.getElementById('pay-upi-display').textContent = upiId;
+      if (amount) document.getElementById('pay-amount-inr').value = amount;
+      updateCryptoAmount();
+      showToast('✅ UPI QR scanned: ' + upiId, 'success');
+    }
+
+    function useManualUPI() {
+      const upiId = document.getElementById('manual-upi').value.trim();
+      if (!upiId) { showToast('❌ Please enter a UPI ID', 'error'); return; }
+      scannedUPI = upiId;
+      document.getElementById('pay-upi-display').textContent = upiId;
+      updateCryptoAmount();
+      showToast('✅ UPI ID set: ' + upiId, 'success');
+    }
+
+    function renderPayTab() {
+      updateCryptoAmount();
+    }
+
+    function updateCryptoAmount() {
+      const amountINR = parseFloat(document.getElementById('pay-amount-inr')?.value || 0);
+      const sym = document.getElementById('pay-crypto-select')?.value || 'BTC';
+      const price = cryptoPrices[sym]?.priceINR || 1;
+      const cryptoAmount = amountINR / price;
+
+      document.getElementById('conv-inr').textContent = formatINR(amountINR || 0);
+      document.getElementById('conv-crypto').textContent = (cryptoAmount || 0).toFixed(8) + ' ' + sym;
+      document.getElementById('conv-balance').textContent = formatINR(currentUser?.balance || 0);
+      document.getElementById('conv-balance').style.color = (currentUser?.balance >= amountINR) ? 'var(--green)' : 'var(--red)';
+    }
+
+    function updateConversionPreview() {
+      // Called on price tick
+      updateCryptoAmount();
+    }
+
+    // ============================================================
+    // PAYMENT PROCESSING
+    // ============================================================
+    function processPayment() {
+      const upiId = scannedUPI || document.getElementById('manual-upi').value.trim();
+      const amountINR = parseFloat(document.getElementById('pay-amount-inr').value);
+      const sym = document.getElementById('pay-crypto-select').value;
+      const note = document.getElementById('pay-note').value.trim();
+
+      // Validation
+      if (!upiId) { showToast('❌ Please scan or enter a UPI ID', 'error'); return; }
+      if (!amountINR || amountINR < 1) { showToast('❌ Enter a valid amount', 'error'); return; }
+      if (currentUser.balance < amountINR) { showToast('❌ Insufficient balance', 'error'); return; }
+
+      const price = cryptoPrices[sym].priceINR;
+      const cryptoAmount = amountINR / price;
+
+      // Deduct balance
+      currentUser.balance -= amountINR;
+      DB.updateUser(currentUser);
+      setSession(currentUser);
+
+      // Save payment record
+      const payment = {
+        id: 'pay_' + Date.now(),
+        userId: currentUser.id,
+        upiId,
+        amountINR,
+        cryptoSymbol: sym,
+        cryptoAmount,
+        cryptoPriceAtTime: price,
+        note,
+        status: 'success',
+        createdAt: new Date().toISOString()
+      };
+      DB.savePayment(payment);
+
+      // ====================================================
+      // 🔌 BACKEND HOOK POINT
+      // Trigger your fintech bank transfer here:
+      //   await fetch('/api/payments/upi-transfer', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+      //     body: JSON.stringify({
+      //       upiId,
+      //       amountINR,
+      //       cryptoSymbol: sym,
+      //       cryptoAmount,
+      //       userId: currentUser.id
+      //     })
+      //   });
+      // ====================================================
+
+      // UI feedback
+      showToast(`✅ Paid ${formatINR(amountINR)} to ${upiId}`, 'success');
+
+      // Reset form
+      document.getElementById('pay-upi-display').textContent = '— Not scanned yet —';
+      document.getElementById('pay-amount-inr').value = '';
+      document.getElementById('pay-note').value = '';
+      document.getElementById('manual-upi').value = '';
+      scannedUPI = '';
+      updateCryptoAmount();
+    }
+
+    // ============================================================
+    // UTILITIES
+    // ============================================================
+    function formatINR(n) {
+      if (!n || isNaN(n)) return '₹0';
+      return '₹' + Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function formatCompact(n) {
+      if (n >= 1e7) return (n / 1e7).toFixed(2) + 'Cr';
+      if (n >= 1e5) return (n / 1e5).toFixed(2) + 'L';
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+      return Math.round(n).toLocaleString('en-IN');
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    let toastTimeout;
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('toast');
+      const colors = { success: 'var(--green)', error: 'var(--red)', info: 'var(--neon)' };
+      toast.style.borderColor = colors[type];
+      toast.innerHTML = `<span style="color: ${colors[type]};">${msg}</span>`;
+      toast.style.display = 'block';
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.style.display = 'none', 3500);
+    }
+
+    // ============================================================
+    // BOOT
+    // ============================================================
+    window.addEventListener('load', () => {
+      if (currentUser) {
+        // Already logged in
+        showApp();
+      } else {
+        showAuth();
+      }
+    });
+  </script>
+  <script src="frontend-api-integration.js"></script>
+</body>
+
+</html>
