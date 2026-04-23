@@ -8,6 +8,7 @@ const path = require('path'); // Added the path module here
 const { testConnection, runMigrations } = require('./db/database');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
 
 app.use(helmet({
