@@ -10,7 +10,9 @@ const { testConnection, runMigrations } = require('./db/database');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
