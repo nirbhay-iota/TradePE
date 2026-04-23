@@ -508,7 +508,7 @@
         </div>
 
         <!-- Demo hint -->
-        
+
       </div>
     </div>
 
@@ -703,7 +703,7 @@
         </div>
 
         <!-- API Status Banner -->
-        
+
 
         <div id="markets-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <!-- Populated by JS -->
@@ -814,7 +814,7 @@
               🔐 Confirm Payment
             </button>
 
-            
+
           </div>
         </div>
       </div>
@@ -903,17 +903,17 @@
 
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
-    
-    
 
-   
-    var currentUser = JSON.parse(sessionStorage.getItem('cryptonex_session') || 'null');
 
-    
 
-    
+
+    var currentUser = null;
+
+
+
+
     const CRYPTO_CONFIG = {
-      USDT: { name: 'Tether USD',  symbol: 'USDT', color: '#26a17b', bg: '#0d1a14', icon: '₮' },
+      USDT: { name: 'Tether USD', symbol: 'USDT', color: '#26a17b', bg: '#0d1a14', icon: '₮' },
       BTC: { name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', bg: '#1a1200', icon: '₿' },
       ETH: { name: 'Ethereum', symbol: 'ETH', color: '#627eea', bg: '#0d0f1f', icon: 'Ξ' },
       BNB: { name: 'BNB', symbol: 'BNB', color: '#f3ba2f', bg: '#1a1600', icon: 'B' },
@@ -922,7 +922,7 @@
     };
 
     let cryptoPrices = {
-      USDT: { priceINR: 84,      change24h: 0.1  },
+      USDT: { priceINR: 84, change24h: 0.1 },
       BTC: { priceINR: 6850000, change24h: 2.3 },
       ETH: { priceINR: 310000, change24h: -1.1 },
       BNB: { priceINR: 52000, change24h: 0.8 },
@@ -931,7 +931,7 @@
     };
 
     // Simulate live price ticks
-    
+
 
     // Chart history data per crypto
     const chartHistory = {};
@@ -951,11 +951,11 @@
       document.getElementById(id).style.display = 'flex';
     }
 
-    
 
-    
 
-    
+
+
+
 
     // PAGE MANAGEMENT
     function showAuth() {
@@ -966,7 +966,7 @@
     }
 
     function showApp() {
-      if (!currentUser) {       
+      if (!currentUser) {
         showAuth();
         return;
       }
@@ -994,7 +994,7 @@
       if (tab === 'pay') renderPayTab();
     }
 
-    
+
 
     function getTimeGreeting() {
       const h = new Date().getHours();
@@ -1003,7 +1003,7 @@
       return 'Evening';
     }
 
-    
+
 
     function renderMiniCharts() {
       const container = document.getElementById('mini-charts-container');
@@ -1068,7 +1068,7 @@
       });
     }
 
-    
+
 
     // MARKETS RENDER
     function renderMarkets() {
@@ -1169,11 +1169,69 @@
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     }
 
-    
+    function clearHistory() {
+      if (!confirm('Clear all payment history? This cannot be undone.')) return;
+      DB.clearUserPayments(currentUser.id);
+      renderHistory();
+      showToast('🗑 History cleared', 'info');
+    }
+    function renderHistory() {
+      const payments = DB.getPayments(currentUser.id);
+      const totalPaid = payments.reduce((s, p) => s + p.amountINR, 0);
+      const avgTx = payments.length ? totalPaid / payments.length : 0;
 
-    
+      // Stats
+      document.getElementById('history-stats').innerHTML = `
+        <div class="card" style="padding: 18px;">
+          <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Total Payments</div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--neon); font-family: 'Space Mono';">${payments.length}</div>
+        </div>
+        <div class="card" style="padding: 18px;">
+          <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Total Spent</div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--red); font-family: 'Space Mono';">${formatINR(totalPaid)}</div>
+        </div>
+        <div class="card" style="padding: 18px;">
+          <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px;">Avg Transaction</div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--accent); font-family: 'Space Mono';">${formatINR(avgTx)}</div>
+        </div>
+      `;
 
-    
+      const container = document.getElementById('payments-table-container');
+      if (!payments.length) {
+        container.innerHTML = '<div style="text-align: center; padding: 60px; color: var(--muted); font-size: 14px;">📭 No payments made yet. Try the Pay via UPI section!</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>UPI ID</th>
+              <th>Note</th>
+              <th>Crypto</th>
+              <th>INR Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${payments.map(p => `
+              <tr>
+                <td class="mono" style="font-size: 12px; color: var(--muted);">${formatDate(p.createdAt)}</td>
+                <td style="font-weight: 600; color: var(--neon);">${p.upiId}</td>
+                <td style="color: var(--muted); font-size: 13px;">${p.note || '—'}</td>
+                <td class="mono" style="font-size: 13px;">${p.cryptoAmount.toFixed(6)} <span class="ticker-tag">${p.cryptoSymbol}</span></td>
+                <td style="font-weight: 700; font-family: 'Space Mono'; color: var(--red);">-${formatINR(p.amountINR)}</td>
+                <td><span style="background: rgba(0,214,143,0.15); color: var(--green); border-radius: 6px; padding: 3px 10px; font-size: 12px;">✓ Success</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+
+
 
     // QR SCANNER
     let html5QrCode = null;
@@ -1242,12 +1300,12 @@
       updateCryptoAmount();
     }
 
-    
 
-    
+
+
 
     // PAYMENT PROCESSING
-    
+
 
     // UTILITIES
     function formatINR(n) {
@@ -1267,7 +1325,7 @@
       return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     }
 
-    let toastTimeout;
+    var toastTimeout;
     function showToast(msg, type = 'info') {
       const toast = document.getElementById('toast');
       const colors = { success: 'var(--green)', error: 'var(--red)', info: 'var(--neon)' };
@@ -1279,7 +1337,7 @@
     }
 
   </script>
-  <script src="./frontend-api-integration.js"></script>
+  <script src="frontend-api-integration.js"></script>
 </body>
 
 </html>
