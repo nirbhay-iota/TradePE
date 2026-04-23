@@ -43,24 +43,44 @@ function getBalanceINR() {
 var priceCache = null;
 var currentSnapshotId = null;
 
+let hasRecalibratedCharts = false;
+
 async function fetchCryptoPrices() {
   try {
     const data = await apiCall('GET', '/crypto/prices');
-    Object.keys(data.prices).forEach(sym => {
-      if (cryptoPrices[sym]) {
-        cryptoPrices[sym].priceINR  = data.prices[sym].priceINR;
-        cryptoPrices[sym].change24h = data.prices[sym].change24h;
-      }
-    });
     priceCache = data;
     currentSnapshotId = data.snapshot_id;
+
     Object.keys(data.prices).forEach(sym => {
-      if (chartHistory[sym]) {
-        chartHistory[sym].push(data.prices[sym].priceINR);
-        chartHistory[sym].shift();
+      if (cryptoPrices[sym]) {
+        const realPrice = data.prices[sym].priceINR;
+        cryptoPrices[sym].priceINR = realPrice;
+        cryptoPrices[sym].change24h = data.prices[sym].change24h;
+
+        // The first time we get real CoinGecko data, erase the fake data 
+        // and build a realistic history line leading up to the current price
+        if (!hasRecalibratedCharts && chartHistory[sym]) {
+           chartHistory[sym] = Array.from({ length: 30 }, () =>
+              realPrice * (1 + (Math.random() - 0.5) * 0.005) // Small 0.5% random variance for visual effect
+           );
+        }
       }
     });
-    updateMiniCharts();
+
+    hasRecalibratedCharts = true;
+
+    // Force the charts to re-draw with the newly calibrated data
+    if (typeof updateMiniCharts === 'function') updateMiniCharts();
+    
+    // Update the big Markets charts if the user is looking at them
+    Object.keys(cryptoPrices).forEach(sym => {
+      const fullChart = chartInstances['full_' + sym];
+      if (fullChart) {
+        fullChart.data.datasets[0].data = [...chartHistory[sym]];
+        fullChart.update('none');
+      }
+    });
+
     updateConversionPreview();
   } catch (err) {
     console.warn('Price fetch failed, using cached:', err.message);
