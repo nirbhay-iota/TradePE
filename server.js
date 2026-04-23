@@ -17,7 +17,8 @@ app.use(helmet({
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? '*' // Temporarily set to '*' so your Railway domain doesn't block itself
+    ? process.env.FRONTEND_URL
+     // Temporarily set to '*' so your Railway domain doesn't block itself
     : '*',                                  
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
