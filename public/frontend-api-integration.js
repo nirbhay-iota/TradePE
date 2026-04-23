@@ -4,7 +4,7 @@
 // ---- CONFIG ----
 const API_BASE = window.location.hostname === 'localhost'
   ? 'http://localhost:3001/api'
-  : 'https://tradepe.up.railway.app/';
+  : 'https://tradepe.up.railway.app/api';
 
 // ---- TOKEN MANAGEMENT ----
 function getToken()        { return localStorage.getItem('cnx_token'); }
