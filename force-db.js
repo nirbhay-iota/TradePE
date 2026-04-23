@@ -7,7 +7,7 @@ async function forceTables() {
         console.log("🚀 Connecting directly to Railway...");
         
         // PASTE YOUR EXACT RAILWAY CONNECTION URL HERE
-        const connectionUri = "mysql://root:YOUR_PASSWORD@shortline.proxy.rlwy.net:48319/railway"; 
+        const connectionUri = "mysql://root:TcPMnHTCJstjtpPRbBbPyzwGTEMvNXxX@shortline.proxy.rlwy.net:48319/railway"; 
         
         const connection = await mysql.createConnection({
             uri: connectionUri,
