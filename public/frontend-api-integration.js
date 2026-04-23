@@ -1,5 +1,5 @@
 // ---- CONFIG ----
-const API_BASE = 'https://tradepe.up.railway.app/api';
+const API_BASE = 'https://tradepe.up.railway.app//api';
 
 function getToken() { return localStorage.getItem('cnx_token'); }
 function saveToken(t) { localStorage.setItem('cnx_token', t); }
