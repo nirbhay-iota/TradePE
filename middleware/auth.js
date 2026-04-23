@@ -1,10 +1,7 @@
-// middleware/auth.js
-// ============================================================
 // JWT Authentication Middleware
 // Usage: router.get('/protected', authMiddleware, handler)
 // It reads the Bearer token from the Authorization header,
 // verifies it, and attaches req.user = { user_id, email }
-// ============================================================
 
 const jwt = require('jsonwebtoken');
 
