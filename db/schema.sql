@@ -4,11 +4,7 @@
 -- Run this file once to initialize your database
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS cryptonex
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
 
-USE cryptonex;
 
 -- ============================================================
 -- TABLE 1: Users
