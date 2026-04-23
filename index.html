@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+  <link rel="icon" type="image/png" href="favicon.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TradePe — Digital Asset Exchange</title>
@@ -49,7 +50,6 @@
       font-family: 'Space Mono', monospace;
     }
 
-    /* Animated grid background */
     .grid-bg {
       position: fixed;
       inset: 0;
@@ -508,11 +508,7 @@
         </div>
 
         <!-- Demo hint -->
-        <div
-          style="margin-top: 20px; padding: 12px; background: rgba(0,255,224,0.05); border: 1px solid rgba(0,255,224,0.15); border-radius: 10px; font-size: 12px; color: var(--muted);"
-          class="mono">
-          🧪 Demo: register a new account or use any existing credentials
-        </div>
+        
       </div>
     </div>
 
@@ -707,16 +703,7 @@
         </div>
 
         <!-- API Status Banner -->
-        <div
-          style="background: rgba(123,92,250,0.1); border: 1px solid rgba(123,92,250,0.3); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 16px;">🔌</span>
-          <div>
-            <div style="font-size: 13px; font-weight: 700; color: #a78bfa;">API Integration Point</div>
-            <div style="font-size: 11px; color: var(--muted);" class="mono">Replace <code
-                style="color:#a78bfa;">fetchCryptoPrices()</code> in JS with your API call (CoinGecko, Binance, etc.) —
-              prices currently use simulated data</div>
-          </div>
-        </div>
+        
 
         <div id="markets-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <!-- Populated by JS -->
@@ -735,7 +722,7 @@
           <!-- Scanner Panel -->
           <div class="card" style="padding: 24px;">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">
-              📷 Scan UPI QR Code
+              Scan UPI QR Code
             </h3>
 
             <div id="qr-reader"
@@ -769,7 +756,7 @@
 
           <!-- Payment Panel -->
           <div class="card" style="padding: 24px;">
-            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">💸 Payment Details</h3>
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Payment Details</h3>
 
             <div style="background: var(--bg3); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
               <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Recipient UPI ID</div>
@@ -783,11 +770,7 @@
                   style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;">Pay
                   with Crypto</label>
                 <select class="input-field" id="pay-crypto-select" onchange="updateCryptoAmount()">
-                  <option value="BTC">Bitcoin (BTC)</option>
-                  <option value="ETH">Ethereum (ETH)</option>
-                  <option value="BNB">BNB</option>
-                  <option value="SOL">Solana (SOL)</option>
-                  <option value="XRP">XRP</option>
+                  <option value="USDT">Tether (USDT)</option>
                 </select>
               </div>
               <div>
@@ -811,7 +794,7 @@
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span class="mono" style="font-size: 13px; color: var(--muted);">Crypto to Deduct</span>
-                <span class="mono" style="font-size: 14px; color: var(--neon);" id="conv-crypto">0 BTC</span>
+                <span class="mono" style="font-size: 14px; color: var(--neon);" id="conv-crypto">0 USDT</span>
               </div>
               <div style="border-top: 1px solid var(--border); margin: 8px 0;"></div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -831,14 +814,7 @@
               🔐 Confirm Payment
             </button>
 
-            <!-- Backend note -->
-            <div
-              style="margin-top: 14px; background: rgba(255,45,120,0.05); border: 1px solid rgba(255,45,120,0.2); border-radius: 10px; padding: 12px; font-size: 11px; color: var(--muted);"
-              class="mono">
-              ⚙️ <span style="color: #ff8fab;">Backend Hook:</span> On payment confirm, call your bank API to transfer
-              the INR equivalent. The <code style="color: #ff8fab;">processPayment()</code> function emits a payment
-              event ready for your backend integration.
-            </div>
+            
           </div>
         </div>
       </div>
@@ -927,9 +903,7 @@
 
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
-    // ============================================================
-    // DATABASE (localStorage)
-    // ============================================================
+    
     const DB = {
       // Users
       getUsers() { return JSON.parse(localStorage.getItem('cryptonex_users') || '[]'); },
@@ -978,9 +952,7 @@
       }
     };
 
-    // ============================================================
-    // SESSION
-    // ============================================================
+   
     var currentUser = JSON.parse(sessionStorage.getItem('cryptonex_session') || 'null');
 
     function setSession(user) {
@@ -992,18 +964,7 @@
       sessionStorage.removeItem('cryptonex_session');
     }
 
-    // ============================================================
-    // CRYPTO PRICE ENGINE
-    // ============================================================
-
-    // ====================================================
-    // 🔌 API INTEGRATION POINT
-    // Replace the simulated prices below with real API calls.
-    // Example with CoinGecko (free tier):
-    //   const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=inr,usd&include_24hr_change=true');
-    //   const data = await res.json();
-    //   Then map data to the cryptoData format below.
-    // ====================================================
+    
     const CRYPTO_CONFIG = {
       USDT: { name: 'Tether USD',  symbol: 'USDT', color: '#26a17b', bg: '#0d1a14', icon: '₮' },
       BTC: { name: 'Bitcoin', symbol: 'BTC', color: '#f7931a', bg: '#1a1200', icon: '₿' },
@@ -1044,9 +1005,7 @@
 
     let chartInstances = {};
 
-    // ============================================================
     // AUTH HANDLERS
-    // ============================================================
     function showView(id) {
       document.getElementById('view-login').style.display = 'none';
       document.getElementById('view-register').style.display = 'none';
@@ -1087,9 +1046,7 @@
       showToast('👋 Signed out successfully', 'info');
     }
 
-    // ============================================================
     // PAGE MANAGEMENT
-    // ============================================================
     function showAuth() {
       document.getElementById('page-auth').classList.add('active');
       document.getElementById('page-app').classList.remove('active');
@@ -1098,7 +1055,7 @@
     }
 
     function showApp() {
-      if (!currentUser) {        // ← add this guard
+      if (!currentUser) {       
         showAuth();
         return;
       }
@@ -1126,9 +1083,7 @@
       if (tab === 'pay') renderPayTab();
     }
 
-    // ============================================================
     // INIT
-    // ============================================================
     function initDashboard() {
       if (!currentUser) return;
       // Refresh user from DB
@@ -1139,7 +1094,6 @@
       document.getElementById('dashboard-greeting').textContent = `Good ${getTimeGreeting()}, ${currentUser.name.split(' ')[0]}`;
       document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-      // Start price simulation
       setInterval(() => {
         simulatePriceTick();
         updateMiniCharts();
@@ -1154,9 +1108,7 @@
       return 'Evening';
     }
 
-    // ============================================================
     // DASHBOARD RENDER
-    // ============================================================
     function renderDashboard() {
       if (!currentUser) return;
       currentUser = DB.getUserByEmail(currentUser.email);
@@ -1258,9 +1210,7 @@
   `).join('');
     }
 
-    // ============================================================
     // MARKETS RENDER
-    // ============================================================
     function renderMarkets() {
       const container = document.getElementById('markets-grid');
       container.innerHTML = '';
@@ -1351,9 +1301,7 @@
       });
     }
 
-    // ============================================================
     // WALLET RENDER
-    // ============================================================
     function renderWallet() {
       currentUser = DB.getUserByEmail(currentUser.email);
       document.getElementById('wallet-balance').textContent = formatINR(currentUser.balance);
@@ -1410,9 +1358,7 @@
       renderDashboard();
     }
 
-    // ============================================================
     // HISTORY RENDER
-    // ============================================================
     function renderHistory() {
       const payments = DB.getPayments(currentUser.id);
       const totalPaid = payments.reduce((s, p) => s + p.amountINR, 0);
@@ -1475,9 +1421,7 @@
       showToast('🗑 History cleared', 'info');
     }
 
-    // ============================================================
     // QR SCANNER
-    // ============================================================
     let html5QrCode = null;
     let scannedUPI = '';
 
@@ -1500,7 +1444,7 @@
         document.getElementById('stop-scan-btn').style.display = 'block';
       }).catch(err => {
         showToast('⚠️ Camera not available. Use manual entry.', 'error');
-        document.getElementById('qr-reader').innerHTML = `<div style="text-align: center; padding: 40px; color: var(--muted); font-size: 13px;"><div style="font-size: 36px; margin-bottom: 8px;">📷</div>Camera unavailable<br><small>Use manual UPI entry below</small></div>`;
+        document.getElementById('qr-reader').innerHTML = `<div style="text-align: center; padding: 40px; color: var(--muted); font-size: 13px;"><div style="font-size: 36px; margin-bottom: 8px;"></div>Camera unavailable<br><small>Use manual UPI entry below</small></div>`;
       });
     }
 
@@ -1514,7 +1458,6 @@
     }
 
     function parseUPIQR(text) {
-      // UPI QR format: upi://pay?pa=upiid@bank&pn=Name&am=amount
       let upiId = text;
       let amount = '';
       try {
@@ -1558,20 +1501,16 @@
     }
 
     function updateConversionPreview() {
-      // Called on price tick
       updateCryptoAmount();
     }
 
-    // ============================================================
     // PAYMENT PROCESSING
-    // ============================================================
     function processPayment() {
       const upiId = scannedUPI || document.getElementById('manual-upi').value.trim();
       const amountINR = parseFloat(document.getElementById('pay-amount-inr').value);
       const sym = document.getElementById('pay-crypto-select').value;
       const note = document.getElementById('pay-note').value.trim();
 
-      // Validation
       if (!upiId) { showToast('❌ Please scan or enter a UPI ID', 'error'); return; }
       if (!amountINR || amountINR < 1) { showToast('❌ Enter a valid amount', 'error'); return; }
       if (currentUser.balance < amountINR) { showToast('❌ Insufficient balance', 'error'); return; }
@@ -1579,12 +1518,10 @@
       const price = cryptoPrices[sym].priceINR;
       const cryptoAmount = amountINR / price;
 
-      // Deduct balance
       currentUser.balance -= amountINR;
       DB.updateUser(currentUser);
       setSession(currentUser);
 
-      // Save payment record
       const payment = {
         id: 'pay_' + Date.now(),
         userId: currentUser.id,
@@ -1599,26 +1536,8 @@
       };
       DB.savePayment(payment);
 
-      // ====================================================
-      // 🔌 BACKEND HOOK POINT
-      // Trigger your fintech bank transfer here:
-      //   await fetch('/api/payments/upi-transfer', {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-      //     body: JSON.stringify({
-      //       upiId,
-      //       amountINR,
-      //       cryptoSymbol: sym,
-      //       cryptoAmount,
-      //       userId: currentUser.id
-      //     })
-      //   });
-      // ====================================================
+            showToast(`✅ Paid ${formatINR(amountINR)} to ${upiId}`, 'success');
 
-      // UI feedback
-      showToast(`✅ Paid ${formatINR(amountINR)} to ${upiId}`, 'success');
-
-      // Reset form
       document.getElementById('pay-upi-display').textContent = '— Not scanned yet —';
       document.getElementById('pay-amount-inr').value = '';
       document.getElementById('pay-note').value = '';
@@ -1627,9 +1546,7 @@
       updateCryptoAmount();
     }
 
-    // ============================================================
     // UTILITIES
-    // ============================================================
     function formatINR(n) {
       if (!n || isNaN(n)) return '₹0';
       return '₹' + Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -1658,9 +1575,7 @@
       toastTimeout = setTimeout(() => toast.style.display = 'none', 3500);
     }
 
-    // ============================================================
     // BOOT
-    // ============================================================
     window.addEventListener('load', () => {
       if (currentUser) {
         // Already logged in
