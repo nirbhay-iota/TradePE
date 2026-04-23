@@ -206,7 +206,7 @@ async function renderDashboard() {
 
 // Override renderRecentTx to handle backend transaction format
 function renderRecentTx(payments) {
-  const container = document.getElementById('recent-tx-container');
+  const container = document.getElementById('dash-recent-tx');
   if (!container) return;
 
   if (!payments || !payments.length) {
