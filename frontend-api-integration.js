@@ -1,10 +1,6 @@
-// frontend-api-integration.js — COMPLETE FIXED VERSION
-// Overrides ALL functions that use the old localStorage DB system
-
 // ---- CONFIG ----
 const API_BASE = 'http://localhost:3001/api';
 
-// ---- TOKEN MANAGEMENT ----
 function getToken() { return localStorage.getItem('cnx_token'); }
 function saveToken(t) { localStorage.setItem('cnx_token', t); }
 function clearToken() { localStorage.removeItem('cnx_token'); localStorage.removeItem('cnx_user'); }
@@ -25,8 +21,6 @@ async function apiCall(method, path, body = null) {
   return data;
 }
 
-// ---- BALANCE HELPER ----
-// Backend stores USDT. Frontend shows INR. Convert with live rate.
 function getUsdtRate() {
   return priceCache?.usdt_inr_rate || 84;
 }
@@ -35,9 +29,7 @@ function getBalanceINR() {
   return (parseFloat(currentUser.usdt_balance) || 0) * getUsdtRate();
 }
 
-// ============================================================
-// PRICE CACHE
-// ============================================================
+
 var priceCache = null;
 var currentSnapshotId = null;
 
@@ -49,14 +41,12 @@ async function fetchCryptoPrices() {
         cryptoPrices[sym].priceINR = data.prices[sym].priceINR;
         cryptoPrices[sym].change24h = data.prices[sym].change24h;
 
-        // On first load, fill entire history with real price
-        // so there's no fake random data mixed in
+       
         const realPrice = data.prices[sym].priceINR;
         if (chartHistory[sym]) {
           const allSame = chartHistory[sym].every(v => v === chartHistory[sym][0]);
           const hasRandomData = chartHistory[sym][0] !== realPrice;
           if (hasRandomData) {
-            // Reseed entire history with real price + tiny noise
             chartHistory[sym] = Array.from({ length: 30 }, () =>
               realPrice * (1 + (Math.random() - 0.5) * 0.002)
             );
@@ -86,9 +76,7 @@ async function fetchCryptoPrices() {
   }
 }
 
-// ============================================================
 // AUTH — LOGIN
-// ============================================================
 async function handleLogin() {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -107,9 +95,8 @@ async function handleLogin() {
   }
 }
 
-// ============================================================
 // AUTH — REGISTER
-// ============================================================
+
 async function handleRegister() {
   const name = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
@@ -137,9 +124,7 @@ async function handleRegister() {
   }
 }
 
-// ============================================================
-// AUTH — LOGOUT  (overrides handleLogout in index.html)
-// ============================================================
+// AUTH — LOGOUT  
 function handleLogout() {
   stopQRScan();
   clearToken();
@@ -149,13 +134,10 @@ function handleLogout() {
   showToast('👋 Signed out successfully', 'info');
 }
 
-// ============================================================
-// INIT DASHBOARD  (overrides the one that calls DB.getUserByEmail)
-// ============================================================
+// INIT DASHBOARD  
 function initDashboard() {
   if (!currentUser) return;
 
-  // Update sidebar & greeting — use name from backend user object
   const nameEl = document.getElementById('sidebar-username');
   if (nameEl) nameEl.textContent = currentUser.name || currentUser.email;
 
@@ -167,7 +149,6 @@ function initDashboard() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
-  // Use real prices from backend instead of simulated ticks
   fetchCryptoPrices();
   setInterval(fetchCryptoPrices, 15000);
 }
@@ -179,13 +160,10 @@ function getTimeGreeting() {
   return 'Evening';
 }
 
-// ============================================================
-// RENDER DASHBOARD  (overrides the one that uses DB.getPayments)
-// ============================================================
+
 async function renderDashboard() {
   if (!currentUser) return;
 
-  // Refresh balance from server
   try {
     const me = await apiCall('GET', '/auth/me');
     currentUser = me.user;
@@ -198,7 +176,6 @@ async function renderDashboard() {
   const dashBalance = document.getElementById('dash-balance');
   if (dashBalance) dashBalance.textContent = formatINR(balanceINR);
 
-  // Fetch payment totals
   try {
     const data = await apiCall('GET', '/payments/history?limit=100');
     const payments = data.transactions || [];
@@ -223,46 +200,44 @@ async function renderDashboard() {
   renderMiniCharts();
 }
 
-// Override renderRecentTx to handle backend transaction format
 function renderRecentTx(payments) {
-  const container = document.getElementById('recent-tx-container');
+  const container = document.getElementById('dash-recent-tx'); // ← fixed ID
   if (!container) return;
 
   if (!payments || !payments.length) {
-    container.innerHTML = '<div style="text-align: center; padding: 28px; color: var(--muted); font-size: 13px;">No transactions yet</div>';
+    container.innerHTML = '<div style="text-align:center; padding:28px; color:var(--muted); font-size:13px;">No transactions yet</div>';
     return;
   }
 
-  // Handle both old format (localStorage) and new format (backend)
   container.innerHTML = payments.map(p => {
-    // Backend format
-    const upi = p.merchant_vpa || p.upiId || '—';
-    const inr = p.inr_amount || p.amountINR || 0;
-    const status = p.status || 'SUCCESS';
-    const date = p.initiated_at || p.createdAt || new Date().toISOString();
-    const statusColor = status === 'SUCCESS' ? 'var(--green)' :
-      status === 'FAILED' ? 'var(--red)' : '#f7b335';
+    const upi  = p.merchant_vpa || '—';
+    const inr  = parseFloat(p.inr_amount) || 0;
+    const note = p.note || 'UPI Payment';
+    const date = p.initiated_at || new Date().toISOString();
+    const usdt = parseFloat(p.usdt_spent) || 0;
+    const statusColor = p.status === 'SUCCESS' ? 'var(--green)' :
+                        p.status === 'FAILED'  ? 'var(--red)'  : '#f7b335';
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(30,45,74,0.4);">
-        <div>
-          <div style="font-weight:600; font-size:14px; color:var(--neon);">${upi}</div>
-          <div style="font-size:11px; color:var(--muted); margin-top:2px;">${new Date(date).toLocaleString('en-IN')}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(30,45,74,0.5);">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:36px; height:36px; background:rgba(255,45,120,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px;">📤</div>
+          <div>
+            <div style="font-size:14px; font-weight:600;">${upi}</div>
+            <div style="font-size:11px; color:var(--muted);" class="mono">${note} · ${new Date(date).toLocaleString('en-IN')}</div>
+          </div>
         </div>
         <div style="text-align:right;">
-          <div style="font-weight:700; font-family:'Space Mono'; color:var(--red);">-${formatINR(parseFloat(inr))}</div>
-          <div style="font-size:11px; color:${statusColor};">${status}</div>
+          <div style="font-size:14px; font-weight:700; color:var(--red); font-family:'Space Mono';">-${formatINR(inr)}</div>
+          <div style="font-size:11px; color:${statusColor};">${usdt.toFixed(6)} USDT · ${p.status}</div>
         </div>
       </div>`;
   }).join('');
 }
 
-// ============================================================
-// RENDER WALLET  (overrides the one that calls DB.getUserByEmail)
-// ============================================================
+// RENDER WALLET 
 async function renderWallet() {
   if (!currentUser) return;
 
-  // Refresh balance from server
   try {
     const me = await apiCall('GET', '/auth/me');
     currentUser = me.user;
@@ -274,7 +249,6 @@ async function renderWallet() {
   const walletBal = document.getElementById('wallet-balance');
   if (walletBal) walletBal.textContent = formatINR(balanceINR);
 
-  // Show USDT balance in holdings table
   const usdt = parseFloat(currentUser.usdt_balance) || 0;
   const holdingsTable = document.getElementById('holdings-table');
   if (holdingsTable) {
@@ -300,9 +274,7 @@ async function renderWallet() {
   }
 }
 
-// ============================================================
-// ADD FUNDS  (shows info — real funding needs a bank deposit flow)
-// ============================================================
+// ADD FUNDS 
 function addFunds() {
   const amount = parseFloat(document.getElementById('add-funds-amount').value);
   if (!amount || amount < 100) { showToast('❌ Minimum ₹100', 'error'); return; }
@@ -314,9 +286,7 @@ function addFunds() {
   document.getElementById('add-funds-amount').value = '';
 }
 
-// ============================================================
-// PROCESS PAYMENT  (calls real backend)
-// ============================================================
+// PROCESS PAYMENT  
 async function processPayment() {
   const upiId = scannedUPI || document.getElementById('manual-upi').value.trim();
   const amountINR = parseFloat(document.getElementById('pay-amount-inr').value);
@@ -363,9 +333,7 @@ async function processPayment() {
   }
 }
 
-// ============================================================
 // UPDATE CONVERSION PREVIEW  (uses real USDT balance)
-// ============================================================
 function updateCryptoAmount() {
   const amountINR = parseFloat(document.getElementById('pay-amount-inr')?.value || 0);
   const sym = document.getElementById('pay-crypto-select')?.value || 'BTC';
@@ -390,9 +358,7 @@ function updateConversionPreview() {
   updateCryptoAmount();
 }
 
-// ============================================================
 // RENDER HISTORY  (fetches from backend)
-// ============================================================
 async function renderHistory() {
   try {
     const data = await apiCall('GET', '/payments/history?limit=50');
@@ -464,9 +430,7 @@ async function renderHistory() {
   }
 }
 
-// ============================================================
 // BOOT
-// ============================================================
 window.addEventListener('load', async () => {
   const storedUser = getStoredUser();
   const token = getToken();
@@ -475,13 +439,12 @@ window.addEventListener('load', async () => {
     currentUser = storedUser;
     window.currentUser = storedUser;
     showApp();
-    // Verify token still valid
     try {
       const me = await apiCall('GET', '/auth/me');
       currentUser = me.user;
       window.currentUser = me.user;
       saveStoredUser(me.user);
-      renderDashboard(); // re-render with fresh data
+      renderDashboard(); 
     } catch {
       clearToken();
       currentUser = null;
