@@ -1,10 +1,16 @@
-// ---- CONFIG ----
-const API_BASE = 'https://tradepe.up.railway.app/api';
+// frontend-api-integration.js — COMPLETE FIXED VERSION
+// Overrides ALL functions that use the old localStorage DB system
 
-function getToken() { return localStorage.getItem('cnx_token'); }
-function saveToken(t) { localStorage.setItem('cnx_token', t); }
-function clearToken() { localStorage.removeItem('cnx_token'); localStorage.removeItem('cnx_user'); }
-function getStoredUser() { return JSON.parse(localStorage.getItem('cnx_user') || 'null'); }
+// ---- CONFIG ----
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:3001/api'
+  : 'https://REPLACE_WITH_YOUR_RAILWAY_BACKEND_URL/api';
+
+// ---- TOKEN MANAGEMENT ----
+function getToken()        { return localStorage.getItem('cnx_token'); }
+function saveToken(t)      { localStorage.setItem('cnx_token', t); }
+function clearToken()      { localStorage.removeItem('cnx_token'); localStorage.removeItem('cnx_user'); }
+function getStoredUser()   { return JSON.parse(localStorage.getItem('cnx_user') || 'null'); }
 function saveStoredUser(u) { localStorage.setItem('cnx_user', JSON.stringify(u)); }
 
 // ---- HTTP HELPER ----
@@ -21,6 +27,8 @@ async function apiCall(method, path, body = null) {
   return data;
 }
 
+// ---- BALANCE HELPER ----
+// Backend stores USDT. Frontend shows INR. Convert with live rate.
 function getUsdtRate() {
   return priceCache?.usdt_inr_rate || 84;
 }
@@ -29,7 +37,9 @@ function getBalanceINR() {
   return (parseFloat(currentUser.usdt_balance) || 0) * getUsdtRate();
 }
 
-
+// ============================================================
+// PRICE CACHE
+// ============================================================
 var priceCache = null;
 var currentSnapshotId = null;
 
@@ -38,20 +48,8 @@ async function fetchCryptoPrices() {
     const data = await apiCall('GET', '/crypto/prices');
     Object.keys(data.prices).forEach(sym => {
       if (cryptoPrices[sym]) {
-        cryptoPrices[sym].priceINR = data.prices[sym].priceINR;
+        cryptoPrices[sym].priceINR  = data.prices[sym].priceINR;
         cryptoPrices[sym].change24h = data.prices[sym].change24h;
-
-       
-        const realPrice = data.prices[sym].priceINR;
-        if (chartHistory[sym]) {
-          const allSame = chartHistory[sym].every(v => v === chartHistory[sym][0]);
-          const hasRandomData = chartHistory[sym][0] !== realPrice;
-          if (hasRandomData) {
-            chartHistory[sym] = Array.from({ length: 30 }, () =>
-              realPrice * (1 + (Math.random() - 0.5) * 0.002)
-            );
-          }
-        }
       }
     });
     priceCache = data;
@@ -63,22 +61,17 @@ async function fetchCryptoPrices() {
       }
     });
     updateMiniCharts();
-    Object.keys(cryptoPrices).forEach(sym => {
-      const fullChart = chartInstances['full_' + sym];
-      if (fullChart) {
-        fullChart.data.datasets[0].data = [...chartHistory[sym]];
-        fullChart.update('none');
-      }
-    });
     updateConversionPreview();
   } catch (err) {
     console.warn('Price fetch failed, using cached:', err.message);
   }
 }
 
+// ============================================================
 // AUTH — LOGIN
+// ============================================================
 async function handleLogin() {
-  const email = document.getElementById('login-email').value.trim();
+  const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   if (!email || !password) { showToast('❌ Please fill in all fields', 'error'); return; }
   try {
@@ -95,21 +88,22 @@ async function handleLogin() {
   }
 }
 
+// ============================================================
 // AUTH — REGISTER
-
+// ============================================================
 async function handleRegister() {
-  const name = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
+  const name     = document.getElementById('reg-name').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
-  const deposit = document.getElementById('reg-deposit').value || '0'; // ← fixed: .value directly
+  const deposit  = document.getElementById('reg-deposit').value || '0'; // ← fixed: .value directly
 
   if (!name || !email || !password) { showToast('❌ Please fill all fields', 'error'); return; }
   if (password.length < 6) { showToast('❌ Min 6 char password', 'error'); return; }
 
   try {
     showToast('⏳ Creating account...', 'info');
-    const usdtRate = getUsdtRate();
-    const depositVal = parseFloat(deposit) || 0;
+    const usdtRate    = getUsdtRate();
+    const depositVal  = parseFloat(deposit) || 0;
     const initial_usdt = (depositVal / usdtRate).toFixed(8);
 
     const data = await apiCall('POST', '/auth/register', { name, email, password, initial_usdt });
@@ -124,7 +118,9 @@ async function handleRegister() {
   }
 }
 
-// AUTH — LOGOUT  
+// ============================================================
+// AUTH — LOGOUT  (overrides handleLogout in index.html)
+// ============================================================
 function handleLogout() {
   stopQRScan();
   clearToken();
@@ -134,10 +130,13 @@ function handleLogout() {
   showToast('👋 Signed out successfully', 'info');
 }
 
-// INIT DASHBOARD  
+// ============================================================
+// INIT DASHBOARD  (overrides the one that calls DB.getUserByEmail)
+// ============================================================
 function initDashboard() {
   if (!currentUser) return;
 
+  // Update sidebar & greeting — use name from backend user object
   const nameEl = document.getElementById('sidebar-username');
   if (nameEl) nameEl.textContent = currentUser.name || currentUser.email;
 
@@ -149,6 +148,7 @@ function initDashboard() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
+  // Use real prices from backend instead of simulated ticks
   fetchCryptoPrices();
   setInterval(fetchCryptoPrices, 15000);
 }
@@ -160,22 +160,26 @@ function getTimeGreeting() {
   return 'Evening';
 }
 
-
+// ============================================================
+// RENDER DASHBOARD  (overrides the one that uses DB.getPayments)
+// ============================================================
 async function renderDashboard() {
   if (!currentUser) return;
 
+  // Refresh balance from server
   try {
     const me = await apiCall('GET', '/auth/me');
     currentUser = me.user;
     window.currentUser = me.user;
     saveStoredUser(me.user);
-  } catch (e) { /* use cached */ }
+  } catch(e) { /* use cached */ }
 
   const balanceINR = getBalanceINR();
 
   const dashBalance = document.getElementById('dash-balance');
   if (dashBalance) dashBalance.textContent = formatINR(balanceINR);
 
+  // Fetch payment totals
   try {
     const data = await apiCall('GET', '/payments/history?limit=100');
     const payments = data.transactions || [];
@@ -190,7 +194,7 @@ async function renderDashboard() {
     if (dashTx) dashTx.textContent = payments.filter(p => p.status === 'SUCCESS').length;
 
     renderRecentTx(payments.slice(0, 5));
-  } catch (e) {
+  } catch(e) {
     const dashPaid = document.getElementById('dash-total-paid');
     if (dashPaid) dashPaid.textContent = '₹0';
     const dashTx = document.getElementById('dash-tx-count');
@@ -200,55 +204,58 @@ async function renderDashboard() {
   renderMiniCharts();
 }
 
+// Override renderRecentTx to handle backend transaction format
 function renderRecentTx(payments) {
-  const container = document.getElementById('dash-recent-tx'); // ← fixed ID
+  const container = document.getElementById('recent-tx-container');
   if (!container) return;
 
   if (!payments || !payments.length) {
-    container.innerHTML = '<div style="text-align:center; padding:28px; color:var(--muted); font-size:13px;">No transactions yet</div>';
+    container.innerHTML = '<div style="text-align: center; padding: 28px; color: var(--muted); font-size: 13px;">No transactions yet</div>';
     return;
   }
 
+  // Handle both old format (localStorage) and new format (backend)
   container.innerHTML = payments.map(p => {
-    const upi  = p.merchant_vpa || '—';
-    const inr  = parseFloat(p.inr_amount) || 0;
-    const note = p.note || 'UPI Payment';
-    const date = p.initiated_at || new Date().toISOString();
-    const usdt = parseFloat(p.usdt_spent) || 0;
-    const statusColor = p.status === 'SUCCESS' ? 'var(--green)' :
-                        p.status === 'FAILED'  ? 'var(--red)'  : '#f7b335';
+    // Backend format
+    const upi    = p.merchant_vpa || p.upiId || '—';
+    const inr    = p.inr_amount   || p.amountINR || 0;
+    const status = p.status       || 'SUCCESS';
+    const date   = p.initiated_at || p.createdAt || new Date().toISOString();
+    const statusColor = status === 'SUCCESS' ? 'var(--green)' :
+                        status === 'FAILED'  ? 'var(--red)'   : '#f7b335';
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(30,45,74,0.5);">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:36px; height:36px; background:rgba(255,45,120,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px;">📤</div>
-          <div>
-            <div style="font-size:14px; font-weight:600;">${upi}</div>
-            <div style="font-size:11px; color:var(--muted);" class="mono">${note} · ${new Date(date).toLocaleString('en-IN')}</div>
-          </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(30,45,74,0.4);">
+        <div>
+          <div style="font-weight:600; font-size:14px; color:var(--neon);">${upi}</div>
+          <div style="font-size:11px; color:var(--muted); margin-top:2px;">${new Date(date).toLocaleString('en-IN')}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:14px; font-weight:700; color:var(--red); font-family:'Space Mono';">-${formatINR(inr)}</div>
-          <div style="font-size:11px; color:${statusColor};">${usdt.toFixed(6)} USDT · ${p.status}</div>
+          <div style="font-weight:700; font-family:'Space Mono'; color:var(--red);">-${formatINR(parseFloat(inr))}</div>
+          <div style="font-size:11px; color:${statusColor};">${status}</div>
         </div>
       </div>`;
   }).join('');
 }
 
-// RENDER WALLET 
+// ============================================================
+// RENDER WALLET  (overrides the one that calls DB.getUserByEmail)
+// ============================================================
 async function renderWallet() {
   if (!currentUser) return;
 
+  // Refresh balance from server
   try {
     const me = await apiCall('GET', '/auth/me');
     currentUser = me.user;
     window.currentUser = me.user;
     saveStoredUser(me.user);
-  } catch (e) { /* use cached */ }
+  } catch(e) { /* use cached */ }
 
   const balanceINR = getBalanceINR();
   const walletBal = document.getElementById('wallet-balance');
   if (walletBal) walletBal.textContent = formatINR(balanceINR);
 
+  // Show USDT balance in holdings table
   const usdt = parseFloat(currentUser.usdt_balance) || 0;
   const holdingsTable = document.getElementById('holdings-table');
   if (holdingsTable) {
@@ -274,7 +281,9 @@ async function renderWallet() {
   }
 }
 
-// ADD FUNDS 
+// ============================================================
+// ADD FUNDS  (shows info — real funding needs a bank deposit flow)
+// ============================================================
 function addFunds() {
   const amount = parseFloat(document.getElementById('add-funds-amount').value);
   if (!amount || amount < 100) { showToast('❌ Minimum ₹100', 'error'); return; }
@@ -286,15 +295,17 @@ function addFunds() {
   document.getElementById('add-funds-amount').value = '';
 }
 
-// PROCESS PAYMENT  
+// ============================================================
+// PROCESS PAYMENT  (calls real backend)
+// ============================================================
 async function processPayment() {
-  const upiId = scannedUPI || document.getElementById('manual-upi').value.trim();
+  const upiId     = scannedUPI || document.getElementById('manual-upi').value.trim();
   const amountINR = parseFloat(document.getElementById('pay-amount-inr').value);
-  const note = document.getElementById('pay-note').value.trim();
+  const note      = document.getElementById('pay-note').value.trim();
 
-  if (!upiId) { showToast('❌ Scan or enter a UPI ID', 'error'); return; }
-  if (!amountINR || amountINR < 1) { showToast('❌ Enter a valid amount', 'error'); return; }
-  if (!currentSnapshotId) { showToast('❌ Price not loaded. Wait a moment.', 'error'); return; }
+  if (!upiId)                           { showToast('❌ Scan or enter a UPI ID', 'error'); return; }
+  if (!amountINR || amountINR < 1)      { showToast('❌ Enter a valid amount', 'error'); return; }
+  if (!currentSnapshotId)               { showToast('❌ Price not loaded. Wait a moment.', 'error'); return; }
 
   const balanceINR = getBalanceINR();
   if (balanceINR < amountINR) { showToast('❌ Insufficient balance', 'error'); return; }
@@ -333,12 +344,14 @@ async function processPayment() {
   }
 }
 
+// ============================================================
 // UPDATE CONVERSION PREVIEW  (uses real USDT balance)
+// ============================================================
 function updateCryptoAmount() {
-  const amountINR = parseFloat(document.getElementById('pay-amount-inr')?.value || 0);
-  const sym = document.getElementById('pay-crypto-select')?.value || 'BTC';
-  const price = cryptoPrices[sym]?.priceINR || 1;
-  const cryptoAmt = amountINR / price;
+  const amountINR  = parseFloat(document.getElementById('pay-amount-inr')?.value || 0);
+  const sym        = document.getElementById('pay-crypto-select')?.value || 'BTC';
+  const price      = cryptoPrices[sym]?.priceINR || 1;
+  const cryptoAmt  = amountINR / price;
   const balanceINR = getBalanceINR();
 
   const convInr = document.getElementById('conv-inr');
@@ -358,15 +371,17 @@ function updateConversionPreview() {
   updateCryptoAmount();
 }
 
+// ============================================================
 // RENDER HISTORY  (fetches from backend)
+// ============================================================
 async function renderHistory() {
   try {
-    const data = await apiCall('GET', '/payments/history?limit=50');
+    const data     = await apiCall('GET', '/payments/history?limit=50');
     const payments = data.transactions || [];
 
-    const totalPaid = payments.filter(p => p.status === 'SUCCESS').reduce((s, p) => s + parseFloat(p.inr_amount), 0);
+    const totalPaid    = payments.filter(p => p.status === 'SUCCESS').reduce((s, p) => s + parseFloat(p.inr_amount), 0);
     const successCount = payments.filter(p => p.status === 'SUCCESS').length;
-    const avgTx = successCount ? totalPaid / successCount : 0;
+    const avgTx        = successCount ? totalPaid / successCount : 0;
 
     const statsEl = document.getElementById('history-stats');
     if (statsEl) {
@@ -386,10 +401,10 @@ async function renderHistory() {
     }
 
     const statusColors = {
-      SUCCESS: { bg: 'rgba(0,214,143,0.15)', color: 'var(--green)', icon: '✓' },
-      PENDING: { bg: 'rgba(247,179,53,0.15)', color: '#f7b335', icon: '⏳' },
-      FAILED: { bg: 'rgba(255,61,113,0.15)', color: 'var(--red)', icon: '✗' },
-      REFUNDED: { bg: 'rgba(123,92,250,0.15)', color: '#a78bfa', icon: '↩' },
+      SUCCESS:  { bg: 'rgba(0,214,143,0.15)',  color: 'var(--green)', icon: '✓' },
+      PENDING:  { bg: 'rgba(247,179,53,0.15)', color: '#f7b335',      icon: '⏳' },
+      FAILED:   { bg: 'rgba(255,61,113,0.15)', color: 'var(--red)',   icon: '✗' },
+      REFUNDED: { bg: 'rgba(123,92,250,0.15)', color: '#a78bfa',      icon: '↩' },
     };
 
     const container = document.getElementById('payments-table-container');
@@ -410,8 +425,8 @@ async function renderHistory() {
         </thead>
         <tbody>
           ${payments.map(p => {
-      const sc = statusColors[p.status] || statusColors.PENDING;
-      return `<tr>
+            const sc = statusColors[p.status] || statusColors.PENDING;
+            return `<tr>
               <td class="mono" style="font-size:11px; color:var(--muted);">${new Date(p.initiated_at).toLocaleString('en-IN')}</td>
               <td style="font-weight:600; color:var(--neon);">${p.merchant_vpa}</td>
               <td style="color:var(--muted); font-size:12px;">${p.note || '—'}</td>
@@ -421,7 +436,7 @@ async function renderHistory() {
               <td style="font-weight:700; font-family:'Space Mono'; color:var(--red);">-${formatINR(parseFloat(p.inr_amount))}</td>
               <td><span style="background:${sc.bg}; color:${sc.color}; border-radius:6px; padding:3px 10px; font-size:12px;">${sc.icon} ${p.status}</span></td>
             </tr>`;
-    }).join('')}
+          }).join('')}
         </tbody>
       </table>`;
 
@@ -430,21 +445,24 @@ async function renderHistory() {
   }
 }
 
+// ============================================================
 // BOOT
+// ============================================================
 window.addEventListener('load', async () => {
   const storedUser = getStoredUser();
-  const token = getToken();
+  const token      = getToken();
 
   if (storedUser && token) {
     currentUser = storedUser;
     window.currentUser = storedUser;
     showApp();
+    // Verify token still valid
     try {
       const me = await apiCall('GET', '/auth/me');
       currentUser = me.user;
       window.currentUser = me.user;
       saveStoredUser(me.user);
-      renderDashboard(); 
+      renderDashboard(); // re-render with fresh data
     } catch {
       clearToken();
       currentUser = null;
@@ -455,40 +473,3 @@ window.addEventListener('load', async () => {
     showAuth();
   }
 });
-// PAGE MANAGEMENT
-function showView(id) {
-  document.getElementById('view-login').style.display = 'none';
-  document.getElementById('view-register').style.display = 'none';
-  document.getElementById(id).style.display = 'flex';
-}
-
-function showAuth() {
-  document.getElementById('page-auth').classList.add('active');
-  document.getElementById('page-app').classList.remove('active');
-  document.getElementById('page-auth').style.display = 'block';
-  document.getElementById('page-app').style.display = 'none';
-}
-
-function showApp() {
-  if (!currentUser) {       
-    showAuth();
-    return;
-  }
-  document.getElementById('page-auth').classList.remove('active');
-  document.getElementById('page-app').classList.add('active');
-  document.getElementById('page-auth').style.display = 'none';
-  document.getElementById('page-app').style.display = 'block';
-  initDashboard();
-}
-
-// Global Toast function
-let toastTimeout;
-function showToast(msg, type = 'info') {
-  const toast = document.getElementById('toast');
-  const colors = { success: 'var(--green)', error: 'var(--red)', info: 'var(--neon)' };
-  toast.style.borderColor = colors[type];
-  toast.innerHTML = `<span style="color: ${colors[type]};">${msg}</span>`;
-  toast.style.display = 'block';
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => toast.style.display = 'none', 3500);
-}
