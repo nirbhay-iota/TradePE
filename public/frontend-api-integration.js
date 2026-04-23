@@ -455,3 +455,40 @@ window.addEventListener('load', async () => {
     showAuth();
   }
 });
+// PAGE MANAGEMENT
+function showView(id) {
+  document.getElementById('view-login').style.display = 'none';
+  document.getElementById('view-register').style.display = 'none';
+  document.getElementById(id).style.display = 'flex';
+}
+
+function showAuth() {
+  document.getElementById('page-auth').classList.add('active');
+  document.getElementById('page-app').classList.remove('active');
+  document.getElementById('page-auth').style.display = 'block';
+  document.getElementById('page-app').style.display = 'none';
+}
+
+function showApp() {
+  if (!currentUser) {       
+    showAuth();
+    return;
+  }
+  document.getElementById('page-auth').classList.remove('active');
+  document.getElementById('page-app').classList.add('active');
+  document.getElementById('page-auth').style.display = 'none';
+  document.getElementById('page-app').style.display = 'block';
+  initDashboard();
+}
+
+// Global Toast function
+let toastTimeout;
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  const colors = { success: 'var(--green)', error: 'var(--red)', info: 'var(--neon)' };
+  toast.style.borderColor = colors[type];
+  toast.innerHTML = `<span style="color: ${colors[type]};">${msg}</span>`;
+  toast.style.display = 'block';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.style.display = 'none', 3500);
+}
