@@ -10,7 +10,6 @@
 //   4. We return the prices + snapshot ID to the frontend
 //   5. When a payment is made, it references that snapshot_id
 //      so we can PROVE what the price was at payment time
-// ============================================================
 
 const express = require('express');
 const axios   = require('axios');
@@ -18,13 +17,10 @@ const { pool } = require('../db/database');
 
 const router = express.Router();
 
-// In-memory cache — so we don't hit CoinGecko on every request
-// (CoinGecko free tier: 30 calls/min limit)
+
 let priceCache = null;
 let cacheTime  = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds
-
-// CoinGecko coin IDs mapped to our symbols
+const CACHE_TTL_MS = 15000; 
 const COIN_IDS = {
   USDT: 'tether',
   BTC: 'bitcoin',
@@ -35,7 +31,6 @@ const COIN_IDS = {
 };
 
 
-// ---- GET /api/crypto/prices ----
 router.get('/prices', async (req, res) => {
   const now = Date.now();
 
@@ -45,11 +40,7 @@ router.get('/prices', async (req, res) => {
   }
 
   try {
-    // ====================================================
-    // 🔌 COINGECKO API CALL
-    // Free API — no key needed for basic use.
-    // With API key (pro): add header x-cg-demo-api-key
-    // ====================================================
+  
     const coinIds = Object.values(COIN_IDS).join(',');
     const response = await axios.get(
       'https://api.coingecko.com/api/v3/simple/price',
@@ -69,7 +60,6 @@ router.get('/prices', async (req, res) => {
 
     const data = response.data;
 
-    // Remap CoinGecko format to our symbol-keyed format
     const prices = {};
     for (const [sym, coinId] of Object.entries(COIN_IDS)) {
       const coin = data[coinId];
@@ -83,8 +73,7 @@ router.get('/prices', async (req, res) => {
       }
     }
 
-    // Save a price snapshot to DB (for USDT/INR — we use USDT as the base)
-    // In a real system: USDT ≈ USD in INR terms
+   
     const usdtInrRate = prices.BTC?.priceINR / prices.BTC?.priceUSD || 84.0;
     const [snapResult] = await pool.query(
       `INSERT INTO Price_Snapshots (usdt_inr_rate, usd_inr_rate, source)
@@ -107,14 +96,12 @@ router.get('/prices', async (req, res) => {
     return res.json(result);
 
   } catch (err) {
-    // If API is down, serve stale cache or fallback
     console.error('CoinGecko error:', err.message);
 
     if (priceCache) {
       return res.json({ ...priceCache, stale: true });
     }
 
-    // Absolute fallback (hardcoded approximate rates)
     return res.json({
       prices: {
         BTC:  { priceINR: 6850000, priceUSD: 81500, change24h: 0 },
@@ -133,7 +120,6 @@ router.get('/prices', async (req, res) => {
 });
 
 
-// ---- GET /api/crypto/snapshot/:id ----
 router.get('/snapshot/:id', async (req, res) => {
   const [rows] = await pool.query(
     'SELECT * FROM Price_Snapshots WHERE id = ?',
