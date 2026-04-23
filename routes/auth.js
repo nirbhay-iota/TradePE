@@ -1,9 +1,6 @@
-// routes/auth.js
-// ============================================================
 // POST /api/auth/register  — Create new user
 // POST /api/auth/login     — Sign in, receive JWT
 // GET  /api/auth/me        — Get current user profile (protected)
-// ============================================================
 
 const express = require('express');
 const bcrypt  = require('bcryptjs');
@@ -13,11 +10,9 @@ const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
-// ---- POST /api/auth/register ----
 router.post('/register', async (req, res) => {
   const { name, email, password, upi_vpa, initial_usdt } = req.body;
 
-  // Basic validation
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email, and password are required' });
   }
@@ -26,7 +21,6 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if email already exists
     const [existing] = await pool.query(
       'SELECT user_id FROM Users WHERE email = ?', [email]
     );
@@ -34,10 +28,8 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
-    // Hash password — bcrypt with 12 salt rounds (good balance of speed vs security)
     const password_hash = await bcrypt.hash(password, 12);
 
-    // Insert user — initial USDT balance defaults to 0 unless provided (for demo/testing)
     const startBalance = parseFloat(initial_usdt) || 0;
     const [result] = await pool.query(
       `INSERT INTO Users (name, email, password_hash, upi_vpa, usdt_balance)
@@ -47,7 +39,6 @@ router.post('/register', async (req, res) => {
 
     const userId = result.insertId;
 
-    // Generate JWT
     const token = jwt.sign(
       { user_id: userId, email: email.toLowerCase() },
       process.env.JWT_SECRET,
@@ -66,7 +57,6 @@ router.post('/register', async (req, res) => {
 });
 
 
-// ---- POST /api/auth/login ----
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -79,7 +69,6 @@ router.post('/login', async (req, res) => {
       [email.toLowerCase()]
     );
     if (rows.length === 0) {
-      // Deliberate vague error — don't leak whether email exists
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -95,7 +84,6 @@ router.post('/login', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    // Don't send password_hash to frontend
     delete user.password_hash;
 
     return res.json({ message: 'Login successful', token, user });
@@ -106,7 +94,6 @@ router.post('/login', async (req, res) => {
 });
 
 
-// ---- GET /api/auth/me ---- (protected)
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool.query(
